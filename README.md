@@ -18,9 +18,9 @@ if the Phantom Touch driver and CUDA is installed correctly, a window with a sce
 
 1. Download this repository as zip and unzip it
 2. Goto the root directory of this program
-3. Run run_script.bat
-4. Mouse left click and drag: rotate camera; mouse right click and drag: transform camera.
-5. Use the slider to change the tool type(type 0: empty tool; type 1: grasper tool; type 2: electric hook)
+3. Double click and run_script.bat
+4. In the poped up window, mouse left click and drag: rotate camera; mouse right click and drag: transform camera.
+5. Use the slider to change the tool type. There are totally 2 types of surgical tool: grasper and electric hook(type 0: empty tool; type 1: grasper tool; type 2: electric hook)
 ![Slider to change the operation tool type](images/7070d999acfd0e2d7fc560ec88b34ec6.png)
 1. Grasper tool: Press button 1 on Phantom touch to close the grasper. When the tool is completely closed, move the manipulandum to pull the grasped part of soft body.
 ![Press this button to clamp the grasper, and releasing button one will return the grabber to the unclamped state.](images/image-1.png)
