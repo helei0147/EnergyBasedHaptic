@@ -1,6 +1,7 @@
 #include "gpuvar.h"
 #include "gpufun.h"
-
+//#include "../SimManager.h"
+//extern SimManager* g_simManager;
 //计算顶点的初速度
 extern "C" int runcalculateSTMU(float damping, float dt) {
 
@@ -62,21 +63,6 @@ __global__ void calculateSTMU(float* positions, float* old_positions, float* pre
 	externForce[indexZ] = 0;
 }
 
-
-extern "C" int runClearCollisionMU() {
-	cudaMemset(springVertForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-	cudaMemset(springVertisCollide_d, 0, springVertNum_d * sizeof(unsigned char));
-	cudaMemset(springVertCollisionDiag_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-	cudaMemset(springVertCollisionForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-	cudaMemset(springVertInsertionDepth_d, 0.0f, springVertNum_d * sizeof(float));
-	cudaMemset(springVertCollidedBuffer_d, 0, springVertNum_d * 3 * sizeof(float));
-	cudaMemset(springVertCollidedNonPenetration_d, 0, springVertNum_d * 3 * sizeof(float));
-	cudaMemset(springVertCollidedDepth_d, 0, springVertNum_d * sizeof(float));
-	runResetVertToolDistance();
-	cudaMemset(gripper_adsorb_force, 0.0f, gripper_num * 3 * sizeof(float));
-	printCudaError("runClearCollisionMU");
-	return 0;
-}
 
 
 __global__ void resetNANSpringForce(float* force,
@@ -222,7 +208,7 @@ int runcalculateRestPosForceWithTetPos_vCAG(float minStiffnessTV2SV, float maxSt
 		springVertActive_d, springVertNum_d);
 	calculateRestPosWithTetPosMU << <blockNum, threadNum >> > (springVertPos_d, springVert2TetVertMapping_d,
 		springVertCollisionForce_d, springVertCollisionDiag_d,
-		tetVertPos_d, springVertfromTetStiffness_d,
+		tetVertPos_forTri, springVertfromTetStiffness_d,
 		springVertNum_d, springVertActive_d);
 	//cudaDeviceSynchronize();
 	printCudaError("runcalculateRestPosForceWithTetPos_vCAG");
@@ -341,6 +327,16 @@ __global__ void calculatePOSMU(float* positions, float* force, float* fixed, flo
 	next_positions[indexZ] = (diagConstant * (old_positions[indexZ] - positions[sv_index_z]) + elementZ) / (springDiag[threadid] + collisionDiag[indexZ] + diagConstant) + positions[sv_index_z];
 	if (next_positions[indexZ] != next_positions[indexZ]) next_positions[indexZ] = positions[sv_index_z];
 
+	//float deltax = next_positions[indexX] - positions[indexX];
+	//float deltay = next_positions[indexY] - positions[indexY];
+	//float deltaz = next_positions[indexZ] - positions[indexZ];
+	//if (abs(deltax) > 1)
+	//{
+	//	printf("ID: %d force: %.3f %.3f %.3f colForce: %.3f %.3f %.3f colDiag: %.3f %.3f %.3f\nm: %f delta: %.3f %.3f %.3f\n", threadid,
+	//		force[indexX], force[indexY], force[indexZ],
+	//		collisionForce[indexX], collisionForce[indexY], collisionForce[indexZ], collisionDiag[indexX], collisionDiag[indexY], collisionDiag[indexZ],
+	//		diagConstant, deltax, deltay, deltaz);
+	//}
 	//under-relaxation 和 切比雪夫迭代
 	next_positions[indexX] = (next_positions[indexX] - positions[sv_index_x]) * 0.6 + positions[sv_index_x];
 	next_positions[indexY] = (next_positions[indexY] - positions[sv_index_y]) * 0.6 + positions[sv_index_y];
@@ -458,6 +454,7 @@ int runUpdateSurfaceDDir()
 	updateTriNorm << <blockNum, threadNum >> > (springVertPos_d, triIndex_d,
 		springVertNorms_d, triNum_d);
 
+
 	threadNum = 512;
 	blockNum = (springVertNum_d + threadNum - 1) / threadNum;
 	updateSurfaceDDir << <blockNum, threadNum >> > (springVertNorms_d,
@@ -472,15 +469,24 @@ __global__ void resetVertToolDistance(float* vertToolDistance, int vertNum) {
 	vertToolDistance[threadid] = FLT_MAX;
 }
 
-int runResetVertToolDistance() {
+int runResetSpringVertToolDistance() {
+
 	int threadNum = 512;
 	int blockNum = (springVertNum_d + threadNum - 1) / threadNum;
 	resetVertToolDistance << <blockNum, threadNum >> > (
 		springVertToolDistance_d, springVertNum_d);
-	blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
+
+	printCudaError("runResetSpringVertToolDistance");
+	return 0;
+}
+
+int runResetTetVertToolDistance() {
+
+	int threadNum = 512;
+	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 	resetVertToolDistance << <blockNum, threadNum >> > (
 		tetVertToolDistance_d, tetVertNum_d);
-	printCudaError("runResetVertToolDistance");
+	printCudaError("runResetTetVertToolDistance");
 
 	return 0;
 }

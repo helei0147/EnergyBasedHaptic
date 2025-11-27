@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <Windows.h>
 #include <map>
+#include "SimManager.h"
 #include "Solver.h"
 #include "gpu/gpuvar.h"
 #include "gpu/gpufun.h"
@@ -420,12 +421,32 @@ void Solver::CalculateTetSubedtriMapping()
 
 void Solver::PreMalloc()
 {
+	SimManager* m = (SimManager*)m_manager;
 	int tetVertNum = GetTetVertNum();
 	int tetNum = GetTetNum();
+	int springVertNum = GetSpringVertNum();
+	int springNum = GetSpringNum();
 
+	springVertisCollide_bridge.resize(springVertNum);
+	springVertPos_bridge.resize(springVertNum * 3);
+	springVertCollisionDepth_bridge.resize(springVertNum);
+	springVertCollisionPos_bridge.resize(springVertNum*3);
+	springVertCollisionToolFlag_bridge.resize(springVertNum);
+	springVert2TetVertMapping_bridge.resize(springVertNum * 2);
+	tetVertPos_bridge.resize(tetVertNum * 3);
+
+	cudaSetDevice(g_ID_SimRender);
+
+	cudaError e = cudaMalloc((void**)&tvCollisionNum_d, sizeof(int));
+	if (e != cudaSuccess) {
+		printf("cuda malloc tvCollisionNum_d failed: %s\n", cudaGetErrorString(e));
+	}
+	int a;
+	int* aPtr = new int(-1);
+	cudaMemcpy(aPtr, tvCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
 	// 四面体部分
 	cudaMalloc((void**)&tetIndex_d, tetNum * 4 * sizeof(int));
-
+	cudaMalloc((void**)&tetVertNum_d, sizeof(int));
 	cudaMalloc((void**)&tetStiffness_d, tetNum * sizeof(float));
 	cudaMalloc((void**)&tetVertPos_d, tetVertNum*3*sizeof(float));
 	cudaMalloc((void**)&tetVertRestPos_d, tetVertNum * 3 * sizeof(float));
@@ -469,6 +490,13 @@ void Solver::PreMalloc()
 	cudaMalloc((void**)&tetVertCollisionDiag_d, tetVertNum * 3 * sizeof(float));
 	cudaMemset(tetVertCollisionDiag_d, 0.0f, tetVertNum * 3 * sizeof(float));
 
+	cudaMalloc((void**)&springVertisCollide_forTet, springVertNum * sizeof(unsigned char));
+	cudaMalloc((void**)&springVertPos_forTet, springVertNum * 3 * sizeof(float));
+	cudaMalloc((void**)&springVertCollisionDepth_forTet, springVertNum * sizeof(float));
+	cudaMalloc((void**)&springVertCollisionPos_forTet, springVertNum * 3 * sizeof(float));
+	cudaMalloc((void**)&springVertCollisionToolFlag_forTet, springVertNum * sizeof(int));
+	cudaMalloc((void**)&springVert2TetVertMapping_forTet,  springVertNum *2* sizeof(int));
+
 	cudaMalloc((void**)&tetVertToolDistance_d, tetVertNum * sizeof(float));
 	cudaMalloc((void**)&tetVertCollisionDepth_d, tetVertNum * sizeof(float));
 	cudaMalloc((void**)&tetVertCollisionPos_d, tetVertNum * 3 * sizeof(float));
@@ -477,21 +505,50 @@ void Solver::PreMalloc()
 	cudaMemset(tetVertQueueIndex_d, 0, tetVertNum * sizeof(unsigned int));
 	cudaMalloc((void**)&tetVertAuxSumArray_d, tetVertNum * sizeof(unsigned int));
 	cudaMemset(tetVertAuxSumArray_d, 0, tetVertNum * sizeof(unsigned int));
+	//cudaSetDevice(DEVICE_ID_SIM);
 	cudaMalloc((void**)&tetVertCollidedBuffer_d, tetVertNum * 3 * sizeof(float));
 	cudaMalloc((void**)&tetVertCollidedNonPenetration_d, tetVertNum * 3 * sizeof(float));
 	cudaMalloc((void**)&tetVertCollidedDepth_d, tetVertNum * sizeof(float));
 	cudaMalloc((void**)&tetVertCollidedPos_d, tetVertNum * 3 * sizeof(float));
 	cudaMalloc((void**)&tetVertCollidedToolFlag_d, tetVertNum * sizeof(int));
 	cudaMalloc((void**)&tetVertColVelocityMax_d, tetVertNum * 3 * sizeof(float));
-
 	cudaMalloc((void**)&mapTetVertIdx2TriVertIdx_d, tetVertNum * sizeof(int));
+	// 夹取参数
+	gripper_num = GripperCollider::gripper_num;
+	gripper_active = (char*)malloc(1 * sizeof(char) * gripper_num);
+	memset(gripper_active, 0, 1 * sizeof(char) * gripper_num);
+	gripper_angle = (float*)malloc(1 * sizeof(float) * gripper_num);
+	gripper_unclose_tv = (bool*)malloc(1 * sizeof(bool) * gripper_num);
+	memset(gripper_unclose_tv, true, 1 * sizeof(bool) * gripper_num);
+	cudaMalloc((void**)&gripper_pos, 3 * sizeof(float) * gripper_num);
+	gripper_scale = (float*)malloc(3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_pivot_x, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_pivot_y, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_pivot_z, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_upper_x, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_upper_y, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_upper_z, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_lower_x, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_lower_y, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_lower_z, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&tv_grab_flag, 1 * sizeof(unsigned int) * gripper_num * tetVertNum);
+	cudaMalloc((void**)&tv_grab_half_flag, 1 * sizeof(unsigned int) * gripper_num * tetVertNum);
+	cudaMalloc((void**)&tv_relative_pos, 3 * sizeof(float) * gripper_num * tetVertNum);
+	cudaMalloc((void**)&sv_grab_flag, 1 * sizeof(unsigned int) * gripper_num * springVertNum);
+	cudaMalloc((void**)&gripper_adsorb_force, 3 * sizeof(float) * gripper_num);
+	cudaMalloc((void**)&gripper_grab_num, 1 * sizeof(float) * gripper_num);
 
-	// 表面布料网格部分
-	int springVertNum = GetSpringVertNum();
-	int springNum = GetSpringNum();
-
+	
+	// 表面布料网格部分//////////////////////////////////////////////////////////////
+	cudaSetDevice(g_ID_SoftHaptic);
+	springNum_d = springNum;
+	springVertNum_d = springVertNum;
+	triNum_d = m_subedTriIdx.size() / 3;
+	// 表面三角网格 三角形对应的顶点下标
+	cudaMalloc((void**)&triIndex_d, m_subedTriIdx.size() * sizeof(unsigned int));
 	// 弹簧顶点指导向量
 	cudaMalloc((void**)&springVertNonPenetrationDir_d, springVertNum * 3 * sizeof(float));
+	cudaMalloc((void**)&tetVertPos_forTri, tetVertNum * 3 * sizeof(float));
 
 	// 表面三角网格顶点信息
 	cudaMalloc((void**)&springVertPos_d, springVertNum*SV_STRIDE*sizeof(float));
@@ -507,9 +564,6 @@ void Solver::PreMalloc()
 	cudaMalloc((void**)&springVertForce_d, springVertNum * 3 * sizeof(float));
 	cudaMalloc((void**)&springVertfromTetStiffness_d, springVertNum * sizeof(float));
 	cudaMalloc((void**)&springVert2TetVertMapping_d,  springVertNum *2* sizeof(int));
-	// 表面三角网格 三角形对应的顶点下标
-	triNum_d = m_subedTriIdx.size() / 3;
-	cudaMalloc((void**)&triIndex_d, m_subedTriIdx.size() * sizeof(unsigned int));
 
 	cudaMalloc((void**)&springActive_d, springNum * sizeof(bool));
 	cudaMalloc((void**)&springVertActive_d, springVertNum * sizeof(bool));
@@ -519,7 +573,6 @@ void Solver::PreMalloc()
 
 
 	// 表面三角网格弹簧数据
-	springNum_d = springNum;
 	cudaMalloc((void**)&springIndex_d, springNum * 2 * sizeof(unsigned int));
 	cudaMalloc((void**)&springOrgLength_d, springNum * sizeof(float));
 	cudaMalloc((void**)&springStiffness_d, springNum * sizeof(float));
@@ -584,37 +637,48 @@ void Solver::PreMalloc()
 	cudaMalloc((void**)&sphere_shift, 3 * sizeof(float) * sphere_num);
 	cudaMalloc((void**)&sphere_last_pos, 3 * sizeof(float) * sphere_num);
 
-	// 夹取参数
-	gripper_num = GripperCollider::gripper_num;
-	gripper_active = (char*)malloc(1 * sizeof(char) * gripper_num);
-	memset(gripper_active, 0, 1 * sizeof(char) * gripper_num);
-	gripper_angle = (float*)malloc(1 * sizeof(float) * gripper_num);
-	gripper_unclose_tv = (bool*)malloc(1 * sizeof(bool) * gripper_num);
-	memset(gripper_unclose_tv, true, 1 * sizeof(bool) * gripper_num);
-	cudaMalloc((void**)&gripper_pos, 3 * sizeof(float) * gripper_num);
-	gripper_scale = (float*)malloc(3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_pivot_x, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_pivot_y, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_pivot_z, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_upper_x, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_upper_y, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_upper_z, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_lower_x, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_lower_y, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_lower_z, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&tv_grab_flag, 1 * sizeof(unsigned int) * gripper_num * tetVertNum);
-	cudaMalloc((void**)&tv_grab_half_flag, 1 * sizeof(unsigned int) * gripper_num * tetVertNum);
-	cudaMalloc((void**)&tv_relative_pos, 3 * sizeof(float) * gripper_num * tetVertNum);
-	cudaMalloc((void**)&sv_grab_flag, 1 * sizeof(unsigned int) * gripper_num * springVertNum);
-	cudaMalloc((void**)&gripper_adsorb_force, 3 * sizeof(float) * gripper_num);
-	cudaMalloc((void**)&gripper_grab_num, 1 * sizeof(float) * gripper_num);
-
 	// 力反馈相关
 	cudaMalloc((void**)&hapticCollisionNum_d, sizeof(int));
-	cudaMalloc((void**)&tvCollisionNum_d, sizeof(int));
-	printCudaError("PreMalloc");
 
-	unsigned int max_col_num = 2000;
+	if (g_nv_deviceNum == 1)// 单GPU，不需要在多个GPU之间进行数据传播，释放多余的空间，两个指针指向相同的存储区域
+	{
+		if (tetVertPos_forTri != tetVertPos_d)
+		{
+			cudaFree(tetVertPos_forTri);
+			tetVertPos_forTri = tetVertPos_d;
+		}
+		if (springVertisCollide_forTet != springVertisCollide_d)
+		{
+			cudaFree(springVertisCollide_forTet);
+			springVertisCollide_forTet = springVertisCollide_d;
+		}
+		if (springVertPos_forTet != springVertPos_d)
+		{
+			cudaFree(springVertPos_forTet);
+			springVertPos_forTet = springVertPos_d;
+		}
+		if (springVertCollisionDepth_forTet != springVertCollisionDepth_d)
+		{
+			cudaFree(springVertCollisionDepth_forTet);
+			springVertCollisionDepth_forTet = springVertCollisionDepth_d;
+		}
+		if (springVertCollisionPos_forTet != springVertCollisionPos_d)
+		{
+			cudaFree(springVertCollisionPos_forTet);
+			springVertCollisionPos_forTet = springVertCollisionPos_d;
+		}
+		if (springVertCollisionToolFlag_forTet != springVertCollisionToolFlag_d)
+		{
+			cudaFree(springVertCollisionToolFlag_forTet);
+			springVertCollisionToolFlag_forTet = springVertCollisionToolFlag_d;
+		}
+		if (springVert2TetVertMapping_forTet != springVert2TetVertMapping_d)
+		{
+			cudaFree(springVert2TetVertMapping_forTet);
+			springVert2TetVertMapping_forTet = springVert2TetVertMapping_d;
+		}
+	}
+	printCudaError("PreMalloc");
 }
 
 void Solver::FixSoft() {

@@ -98,7 +98,7 @@ void main() {
         float sampleDepth = texture(gPosition, offset.xy).z; // get depth value of kernel sample
   
 
-        ///朝反方向采样
+        ///
          // get sample position
         vec3 samplePos1 = TBN * -samples[i]; // from tangent to view-space
         samplePos1 = fragPos + samplePos1 * radius;
@@ -112,7 +112,7 @@ void main() {
         // get sample depth
         float sampleDepth1 = texture(gPosition, offset1.xy).z; // get depth value of kernel sample
 
-        // range check & accumulate，0表示没有遮挡，1表示有遮挡
+        // range check & accumulate  0 
         float occlusionLocal = (sampleDepth > samplePos.z - bias ? 1.0 : 0.0) * smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
         float rangeCheck = abs(sampleDepth1 - sampleDepth);
         occlusion += occlusionLocal*(rangeCheck > paras.z ? 0 : 1);

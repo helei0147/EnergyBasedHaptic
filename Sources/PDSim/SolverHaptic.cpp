@@ -223,39 +223,56 @@ void Solver::CalculateContactWithCollisionInfo(
 void Solver::MergeCollisionInfoTet() {
 	// 1. 合并碰撞信息
 	runMergeCollisionInfoTet();
+	printCudaError("MergeCollisionInfoTet merge");
 
-	// 2. 传送到CPU，需要分成多个部分
-	//Get_tvCollideNum();
-	int collidedNum = 0;
-	cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
-	vector<float> collidedVertPos(collidedNum * 3, 0);
-	vector<float> collidedVertDDir(collidedNum * 3, 0);
-	vector<float> collidedVertDepth(collidedNum, 0);
-	vector<int> collidedVertToolFlag(collidedNum, -1);
-	cudaMemcpy(collidedVertPos.data(), tetVertCollidedBuffer_d, 3 * collidedNum * sizeof(float), cudaMemcpyDeviceToHost);
-	cudaMemcpy(collidedVertDDir.data(), tetVertCollidedNonPenetration_d, 3 * collidedNum * sizeof(float), cudaMemcpyDeviceToHost);
-	cudaMemcpy(collidedVertDepth.data(), tetVertCollidedDepth_d, collidedNum * sizeof(float), cudaMemcpyDeviceToHost);
-	cudaMemcpy(collidedVertToolFlag.data(), tetVertCollidedToolFlag_d, collidedNum * sizeof(int), cudaMemcpyDeviceToHost);
-	printCudaError("MergeCollisionInfoTet");
+	int tetCollidedNum = 0;
+	cudaError_t error = cudaMemcpy(&tetCollidedNum, tvCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
+	if (error != cudaSuccess)
+	{
+		printf("cudaerror: %d\n", error); // 700
+	}
+	printCudaError("MergeCollisionInfoTet tvCollisionNum_d");
+	tv_collisionNum = tetCollidedNum;
+	vector<float> collidedVertPos(tetCollidedNum * 3, 0);
+	vector<float> collidedVertDDir(tetCollidedNum * 3, 0);
+	vector<float> collidedVertDepth(tetCollidedNum, 0);
+	vector<int> collidedVertToolFlag(tetCollidedNum, -1);
+	//printf("tetCollidedNum in MergeCollisionInfoTet: %d\n", tetCollidedNum);
+	
+	cudaMemcpy(collidedVertPos.data(), tetVertCollidedBuffer_d, 3 * tetCollidedNum * sizeof(float), cudaMemcpyDeviceToHost);
+	printCudaError("MergeCollisionInfoTet copy after tetVertCollidedBuffer_d");
+	cudaMemcpy(collidedVertDDir.data(), tetVertCollidedNonPenetration_d, 3 * tetCollidedNum * sizeof(float), cudaMemcpyDeviceToHost);
+	printCudaError("MergeCollisionInfoTet copy after tetVertCollidedNonPenetration_d");
+	cudaMemcpy(collidedVertDepth.data(), tetVertCollidedDepth_d, tetCollidedNum * sizeof(float), cudaMemcpyDeviceToHost);
+	printCudaError("MergeCollisionInfoTet copy after tetVertCollidedDepth_d");
+	cudaMemcpy(collidedVertToolFlag.data(), tetVertCollidedToolFlag_d, tetCollidedNum * sizeof(int), cudaMemcpyDeviceToHost);
+	printCudaError("MergeCollisionInfoTet copy after tetVertCollidedDepth_d");
 }
 
 void Solver::MergeCollisionInfoTriVert() {
 	// 1. 合并碰撞信息
+	SimManager* m = (SimManager*)m_manager;
+	
 	runMergeCollisionInfoTriVert();
 
 	// 2. 传送到CPU，需要分成多个部分
 	int collidedNum = 0;
 	cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
+	sv_collisionNum = collidedNum;
+	printCudaError("trivertmergeAfter memcpy num");
 	vector<float> collidedVertPos(collidedNum * 3, 0);
 	vector<float> collidedVertDDir(collidedNum * 3, 0);
 	vector<float> collidedVertDepth(collidedNum, 0);
 	vector<int> collidedVertToolFlag(collidedNum, -1);
 	cudaMemcpy(collidedVertPos.data(), springVertCollidedBuffer_d, 3 * collidedNum * sizeof(float), cudaMemcpyDeviceToHost);
+	printCudaError("trivertmergeAfter memcpy pos");
 	cudaMemcpy(collidedVertDDir.data(), springVertCollidedNonPenetration_d, 3 * collidedNum * sizeof(float), cudaMemcpyDeviceToHost);
+	printCudaError("trivertmergeAfter memcpy ddir");
 	cudaMemcpy(collidedVertDepth.data(), springVertCollidedDepth_d, collidedNum * sizeof(float), cudaMemcpyDeviceToHost);
+	printCudaError("trivertmergeAfter memcpy depth");
 	cudaMemcpy(collidedVertToolFlag.data(), springVertCollidedToolFlag_d, collidedNum * sizeof(int), cudaMemcpyDeviceToHost);
+	printCudaError("trivertmergeAfter memcpy toolflag");
 
-	SimManager* m = (SimManager*)m_manager;
 	for (int index = 0; index < m->m_toolList.size(); index++) {
 		m_operatorTransList[index].Clear();
 	}
@@ -295,6 +312,7 @@ void Solver::UpdateColliders() {
 	for (int index = 0; index < m->m_toolList.size(); index++) {
 		int id = m->m_toolIndexList[index];
 		auto& tool = m->m_toolList[index][id];
+		if(id>0)
 		tool->UpdateColliders(m_operatorTransList[index].qg, m_operatorTransList[index].dirg, m_operatorTransList[index].thetah);
 	}
 }
@@ -344,14 +362,18 @@ void Solver::HapticCollideTetGripper() {
 	cudaMemset(tetVertCollisionDepth_d, 0.0f, tetVertNum_d * sizeof(float));
 	cudaMemset(tetVertisCollide_d, 0, tetVertNum_d * sizeof(unsigned char));
 	cudaMemset(tetVertCollisionToolFlag_d, -1, tetVertNum_d * sizeof(int));
-	cudaMemset(hapticCollisionNum_d, 0, sizeof(int));
-	runResetVertToolDistance();
+	cudaMemset(tvCollisionNum_d, 0, sizeof(int));
+	printCudaError("HapticCollideTetGripper memset");
+	runResetTetVertToolDistance();
+	printCudaError("HapticCollideTetGripper runResetTetVertToolDistance");
 
 	cudaMemset(tetVertCollidedBuffer_d, 0, tetVertNum_d * 3 * sizeof(float));
 	cudaMemset(tetVertCollidedNonPenetration_d, 0, tetVertNum_d * 3 * sizeof(float));
 	cudaMemset(tetVertCollidedDepth_d, 0, tetVertNum_d * sizeof(float));
+	printCudaError("HapticCollideTetGripper memset collided");
 	cudaMemcpy(tetVertCollidedPos_d, tetVertPos_d, tetVertNum_d * 3 * sizeof(float), cudaMemcpyDeviceToDevice);
 	cudaMemset(tetVertCollidedToolFlag_d, -1, tetVertNum_d * sizeof(int));
+	printCudaError("HapticCollideTetGripper memset collided");
 
 	// 2. 根据上一帧的虚拟位姿更新当前工具的碰撞体位姿
 	UpdateColliders();
@@ -377,29 +399,31 @@ void Solver::HapticCollideTetGripper() {
 }
 
 void Solver::HapticCollideTriVert()
-{    // 1. 重置碰撞信息
+{   
+	SimManager* m = (SimManager*)m_manager;
+	// 1. 重置碰撞信息
 	cudaMemset(springVertCollisionPos_d, 0, springVertNum_d * 3 * sizeof(float));
 	cudaMemcpy(springVertCollisionNormal_d, springVertNonPenetrationDir_d, springVertNum_d * 3 * sizeof(float), cudaMemcpyDeviceToDevice);
-	cudaMemset(springVertCollisionDepth_d, 0.0f, springVertNum_d * sizeof(float));
+	cudaMemset(springVertCollisionDepth_d, 0.0f, springVertNum_d * sizeof(float));	
 	cudaMemset(springVertisCollide_d, 0, springVertNum_d * sizeof(unsigned char));
+	
 	cudaMemset(springVertCollisionCnt_d, 0, springVertNum_d * sizeof(int));
 	cudaMemset(springVertCollisionToolFlag_d, 0, springVertNum_d * sizeof(int));
 	cudaMemset(hapticCollisionNum_d, 0, sizeof(int));
-	runResetVertToolDistance();
+	
+	printCudaError("HapticCollideTriVert memset");
+	runResetSpringVertToolDistance();
+	printCudaError("HapticCollideTriVert runResetVertToolDistance");
 
-	cudaMemset(tetVertCollidedBuffer_d, 0, tetVertNum_d * 3 * sizeof(float));
-	cudaMemset(tetVertCollidedNonPenetration_d, 0, tetVertNum_d * 3 * sizeof(float));
-	cudaMemset(tetVertCollidedDepth_d, 0, tetVertNum_d * sizeof(float));
-	cudaMemcpy(tetVertCollidedPos_d, tetVertPos_d, tetVertNum_d * 3 * sizeof(float), cudaMemcpyDeviceToDevice);
-	cudaMemset(tetVertCollidedToolFlag_d, 0, tetVertNum_d * sizeof(int));
 
 	// 2. 根据上一帧的虚拟位姿更新当前工具的碰撞体位姿
 	UpdateColliders();
+	printCudaError("HapticCollideTriVert UpdateColliders");
 
 	// 3. 碰撞检测
 	DetectCollisionSV();
 
-	printCudaError("HapticCollideTriVert");
+	printCudaError("HapticCollideTriVert DetectCollisionSV");
 }
 
 void Solver::UpdateQH(float* buffer, int operatorIndex) {
@@ -416,14 +440,4 @@ void Solver::UpdateQH(float* buffer, int operatorIndex) {
 			<< operatorTrans.qg[0] << " " << operatorTrans.qg[1] << " " << operatorTrans.qg[2] << endl;
 	}
 	m_hapticSolver.set_k(k_vc, k_c, k_vct);
-
-	auto fptr = m_recorder[operatorIndex];
-	if (fptr != nullptr && g_recordQhBuffer)
-	{
-		for (int i = 0; i < 19; i++)
-		{
-			fprintf(fptr, "%.5f ", buffer[i]);
-		}
-		fprintf(fptr, "\n");
-	}
 }

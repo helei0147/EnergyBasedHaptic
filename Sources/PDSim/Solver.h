@@ -34,7 +34,8 @@ public:
 	float sv_conColThreshold = 0.5f;
 	float sv_gripper_grab_smoothing = 256.0f;
 	float sv_gripper_adsorb_smoothing = 512.0f;
-
+	int sv_collisionNum = 0;
+	int tv_collisionNum = 0;
 
 	float tv_damping = 0.5f;
 	float tv_dt = 10.0f / 30.0f;
@@ -61,6 +62,7 @@ public:
 
 	double m_opTime;
 	double m_frameTime;
+	double m_hapFrameTime;
 	double m_stTime;
 
 	// 软体中的固定球心和半径
@@ -118,6 +120,15 @@ public:
 	std::vector<char> m_springActive;
 	std::vector<char> m_springVertActive;
 
+	// 用于两个GPU之间传递数据的cpu存储
+	std::vector<unsigned char> springVertisCollide_bridge;
+	std::vector<float> springVertPos_bridge;
+	std::vector<float> springVertCollisionDepth_bridge;
+	std::vector<float> springVertCollisionPos_bridge;
+	std::vector<int> springVertCollisionToolFlag_bridge;
+	std::vector<int> springVert2TetVertMapping_bridge;
+	std::vector <float> tetVertPos_bridge;
+
 #pragma endregion
 	 ~Solver();
 	void CopyToGPU();
@@ -139,15 +150,12 @@ public:
 	void CalculateTetTriMapping();
 	void TriSubdivision();
 	void CalculateTetSubedtriMapping();
-	void transferFromGPUToCPUForRender();
+	void HapticSyn();
 
 	void* m_manager = nullptr;
 	
 	void FixSoft();
 
-
-
-	
 	ofstream m_frameCntFile;
 
 
@@ -190,18 +198,11 @@ public:
 	std::vector<OperatorTrans> m_operatorTransList;
 	std::vector<vec6> m_operatorOutput6DForceList;
 
-	vector<FILE*> m_recorder;
-	vector<FILE*> m_operationLoader;
-
 	float k_vc = 2;
 	float k_c = 4;
 	float k_vct = 100;
 	int hapticIterNum = 3;
 
-
-	vector<float> m_virtualTool; // 用于渲染
-
-	bool inPDFashion = false;
 	void SetQH(const float* toolTrans, // 去掉无用参数
 		std::vector<float>& m_dir, float& m_theta, std::vector<float>& m_qh,
 		std::vector<float>& m_hapticToolTrans);

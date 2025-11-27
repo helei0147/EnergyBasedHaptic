@@ -9,6 +9,29 @@ void printCudaError(const char* funcName) {
 	}
 }
 
+void checkPointerLocation(void* ptr, const char* name) {
+	cudaPointerAttributes attributes;
+	cudaError_t error = cudaPointerGetAttributes(&attributes, ptr);
+
+	if (error != cudaSuccess) {
+		printf("Error: %s\n", cudaGetErrorString(error));
+		return;
+	}
+
+	if (attributes.type == cudaMemoryTypeDevice) {
+		printf("%s Pointer is on GPU device: %d\n", name, attributes.device);
+		printf("Device pointer: %p\n", attributes.devicePointer);
+		printf("Host pointer: %p\n", attributes.hostPointer);
+	}
+	else if (attributes.type == cudaMemoryTypeHost) {
+		printf("%s Pointer is on Host (CPU)\n", name);
+	}
+	else if (attributes.type == cudaMemoryTypeManaged) {
+		printf("%s Pointer is Unified Memory (managed)\n", name);
+		printf("Associated device: %d\n", attributes.device);
+	}
+}
+
 //计算初始状态
 int runcalculateST(float damping, float dt) {
 	//每个block中的线程数
@@ -271,6 +294,7 @@ __global__ void calculateIF(float* positions, int* tetIndex,
 
 //计算更新位置
 int runcalculatePOS(float omega, float dt) {
+
 	int  threadNum = 512;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 	//并行计算

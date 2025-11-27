@@ -6,6 +6,10 @@
 #define SV_STRIDE 3
 #define HASH_BUCKET_NUM 10
 
+extern int g_ID_SimRender;
+extern int g_ID_SoftHaptic;
+extern bool g_asyncSimMode;
+extern int g_nv_deviceNum;
 
 enum COLLIDE_TYPE {
 	NO_COL = 0,
@@ -43,6 +47,7 @@ extern float* tetVolumeDiag_d;
 extern  float* tetVertForce_d;
 extern	float* tetStiffness_d;
 extern int* tetVert2SpringVertMapping_d;
+extern float* tetVertPos_forTri;
 
 extern bool* tetVertActive_d;
 extern float* tetVertNorm_d; // 外表面三角网格顶点的法向量，对应数组中的部分元素，tetVertNum_d*3
@@ -51,6 +56,12 @@ extern float* tetVertNormAccu_d; // tetVertNum_d
 extern float* tetVertCollisionForce_d;
 extern float* tetVertToolDistance_d;
 
+extern unsigned char* springVertisCollide_forTet;
+extern float* springVertPos_forTet;
+extern float* springVertCollisionDepth_forTet;
+extern float* springVertCollisionPos_forTet;
+extern int* springVertCollisionToolFlag_forTet;
+extern int* springVert2TetVertMapping_forTet;
 
 #pragma region 
 

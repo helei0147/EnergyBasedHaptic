@@ -31,14 +31,38 @@ void Solver::HandleCollision() {
 }
 
 void Solver::Step() {
+	// 写到物理仿真的线程
+	if (g_asyncSimMode) {		
+		cudaMemcpy(springVertisCollide_forTet, springVertisCollide_bridge.data(),
+			springVertisCollide_bridge.size() * sizeof(unsigned char), cudaMemcpyHostToDevice);
+		cudaMemcpy(springVertPos_forTet, springVertPos_bridge.data(),
+			springVertPos_bridge.size() * sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(springVertCollisionDepth_forTet, springVertCollisionDepth_bridge.data(),
+			springVertCollisionDepth_bridge.size() * sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(springVertCollisionPos_forTet, springVertCollisionPos_bridge.data(),
+			springVertCollisionPos_bridge.size() * sizeof(float), cudaMemcpyHostToDevice);
+		cudaMemcpy(springVertCollisionToolFlag_forTet, springVertCollisionToolFlag_bridge.data(),
+			springVertCollisionToolFlag_bridge.size() * sizeof(int), cudaMemcpyHostToDevice);
+		cudaMemcpy(springVert2TetVertMapping_forTet, springVert2TetVertMapping_bridge.data(),
+			springVert2TetVertMapping_bridge.size() * sizeof(int), cudaMemcpyHostToDevice);
+		printCudaError("memcpy to GPU");
+
+		cudaMemcpy(tetVertPos_bridge.data(), tetVertPos_d,
+			tetVertPos_bridge.size() * sizeof(float), cudaMemcpyDeviceToHost);
+		printCudaError("copy tetvertpos to cpu bridge");
+	}
+
+
 	QueryPerformanceFrequency(&nFreq);
 	QueryPerformanceCounter(&t1);
 	m_frameTime = (t1.QuadPart - t3.QuadPart) / (double)nFreq.QuadPart;
 	t3 = t1;
 
+
 	ApplyGravity();
 
 	ResetTetVertCollision();
+
 	PropagateCollision();
 	MergeCollisionInfoTet();
 	CollisionBuffer::GetInstance().WriteCollisionBuffer();
@@ -71,8 +95,10 @@ void Solver::Step() {
 		omega = 4 / (4 - rho * rho * omega);
 		runcalculatePOS(omega, tv_dt);
 	}
+
 	// 更新速度
 	runcalculateV(tv_dt);
+
 	printCudaError("Step ---------- 1");
 	QueryPerformanceCounter(&t2);
 	m_opTime = (t2.QuadPart - t1.QuadPart) / (double)nFreq.QuadPart;
@@ -82,4 +108,30 @@ void Solver::Step() {
 		renderTimeInfo << m_frameTime << endl;
 	}
 	renderStepNumPassed++;
+
+}
+
+void Solver::HapticSyn() {
+	// 从力反馈线程把数据读出来	
+	if (g_asyncSimMode) {
+		cudaMemcpy(springVertisCollide_bridge.data(), springVertisCollide_d,
+			springVertisCollide_bridge.size() * sizeof(unsigned char), cudaMemcpyDeviceToHost);
+		cudaMemcpy(springVertPos_bridge.data(), springVertPos_d,
+			springVertPos_bridge.size() * sizeof(float), cudaMemcpyDeviceToHost);
+		cudaMemcpy(springVertCollisionDepth_bridge.data(), springVertCollisionDepth_d,
+			springVertCollisionDepth_bridge.size() * sizeof(float), cudaMemcpyDeviceToHost);
+		cudaMemcpy(springVertCollisionPos_bridge.data(), springVertCollisionPos_d,
+			springVertCollisionPos_bridge.size() * sizeof(float), cudaMemcpyDeviceToHost);
+		cudaMemcpy(springVertCollisionToolFlag_bridge.data(), springVertCollisionToolFlag_d,
+			springVertCollisionToolFlag_bridge.size() * sizeof(int), cudaMemcpyDeviceToHost);
+		cudaMemcpy(springVert2TetVertMapping_bridge.data(), springVert2TetVertMapping_d,
+			springVert2TetVertMapping_bridge.size() * sizeof(int), cudaMemcpyDeviceToHost);
+		printCudaError("Haptic GPU memcpy to CPU");
+		// 写到力反馈仿真线程
+		cudaMemcpy(tetVertPos_forTri, tetVertPos_bridge.data(),
+			tetVertPos_bridge.size() * sizeof(float), cudaMemcpyHostToDevice);
+		printCudaError("memcpy tetvertpos to Haptic GPU");
+	}
+	cudaMemcpy(m_springVertPos.data(), springVertPos_d, m_springVertPos.size() * sizeof(float), cudaMemcpyDeviceToHost);
+	printCudaError("transferFromGPUToCPUForRender");
 }

@@ -35,11 +35,11 @@ public: // 通用
 		unsigned short minValue = INT16_MAX;
 		HapticTranslator translator;
 		float M[16];
-		unsigned char State[5];
-		unsigned short Encoders[16];
 		int deviceHandle = -1;
 		int bt0, bt1;
 		int anglei = 0;
+		std::vector<OperatorInfo> toolMotion;
+		int motionCount = 0;
 	};
 	std::vector<OperatorInfo> m_operatorList; // 多个设备
 	std::ofstream forceInfoFirst;
@@ -51,8 +51,8 @@ public: // 通用
 
 public: 
 	std::vector<std::string> m_deviceName;
-
 	std::vector<std::string> m_deviceCfgFile;
+	std::vector<std::string> m_deviceMotionFile;
 
 	bool m_stopFlag = false;
 	bool m_hapticThreadRunFlag = false;

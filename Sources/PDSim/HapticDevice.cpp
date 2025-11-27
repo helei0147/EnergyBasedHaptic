@@ -14,9 +14,12 @@
 #include "gpufun.h"
 #include "../PDSim/SimManager.h"
 extern SimManager* g_simManager;
-extern bool g_loadQhBuffer;
 
 HANDLE g_hapticThread;
+bool g_hapticPlayBackMode = true;
+LARGE_INTEGER hapFreq;
+LARGE_INTEGER hap_t1;
+LARGE_INTEGER hap_t2;
 
 int _stdcall SetHapticState(void* pParam);
 
@@ -66,13 +69,35 @@ void Mul44(const float* left, const Matrix44& right, float* res) {
 	res[15] = left[3] * right[12] + left[7] * right[13] + left[11] * right[14] + left[15] * right[15];
 }
 
-void createServoLoop(LPVOID pp) {
+void runServoLoop(LPVOID pp) {
+	HapticDevice* hapticDevice = (HapticDevice*)pp;
+	for (int index = 0; index < g_simManager->m_softHapticSolver.m_operatorTransList.size(); index++) {
+		string& filename = hapticDevice->m_deviceMotionFile[index];
+		FILE* fptr = fopen(filename.c_str(), "r");
+		while (true& fptr != nullptr) {
+			HapticDevice::OperatorInfo tool;
+			int readSuccessNum = fscanf(fptr, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
+				&tool.buffer[0], &tool.buffer[1], &tool.buffer[2], &tool.buffer[3],
+				&tool.buffer[4], &tool.buffer[5], &tool.buffer[6], &tool.buffer[7],
+				&tool.buffer[8], &tool.buffer[9], &tool.buffer[10], &tool.buffer[11],
+				&tool.buffer[12], &tool.buffer[13], &tool.buffer[14], &tool.buffer[15],
+				&tool.buffer[16], &tool.buffer[17], &tool.buffer[18]);
+			if (readSuccessNum == 19) {
+				memcpy(tool.M, tool.buffer, 16 * sizeof(float));
+				hapticDevice->m_operatorList[index].toolMotion.push_back(tool);
+			}
+			else
+				break;
+		}
+	}
+
 	DWORD  threadId;
 	g_hapticThread = CreateThread(NULL, 0, RunHapticState, pp, 0, &threadId);
 }
 
-void stopServoLoop() {
-
+void shutDownServoLoop() {
+	TerminateThread(g_hapticThread, 0);
+	CloseHandle(g_hapticThread);
 }
 
 void HapticTranslator::LoadTransFormFile() {
@@ -213,11 +238,6 @@ HapticTranslator::HapticTranslator() {
 	trans2World.Identity();
 }
 
-int colNum_last = 0;
-int colNum_lastlast = 0;
-bool noCollisionFlag = false;
-
-
 int HapticDevice::GetOperatorCnt() {
 	return m_deviceName.size();
 }
@@ -283,23 +303,35 @@ void HapticDevice::InitHapticDevice() {
 	if (get_stylus_switch == nullptr) UDError("无法获取get_stylus_switch入口");
 
 	// 初始化
-	int ret = createServoLoop();
-	UDLog("createServoLoop ret = " + std::to_string(ret));
+
 	for (int i = 0; i < m_operatorList.size(); i++) {
 		int id = m_operatorList[i].deviceHandle = init_phantom(m_deviceName[i].c_str());
 		if (id < 0) {
 			UDError( "无法打开 " + m_deviceName[i]);
 		} else {
 			enable_phantom_forces(id);
+			g_hapticPlayBackMode = false;
 		}
 	}
-	ret = startServoLoop(SetHapticState, this);
-	UDLog("SetHapticState ret = " + std::to_string(ret));
-
+	if (!g_hapticPlayBackMode) {
+		int ret = createServoLoop();
+		UDLog("createServoLoop ret = " + std::to_string(ret));
+		ret = startServoLoop(SetHapticState, this);
+		UDLog("SetHapticState ret = " + std::to_string(ret));
+	}
+	else {
+		runServoLoop( (LPVOID) this );
+	}
 	UDLog("InitHapticDevice 成功");
 }
 
 void HapticDevice::StopHapticDevice() {
+	if (g_hapticPlayBackMode) {
+		m_stopFlag = true;
+		Sleep(50);
+		shutDownServoLoop();
+		return;
+	}
 	if (m_deviceDriverDLL != NULL && !m_stopFlag) {
 		m_stopFlag = true;
 		Sleep(50);
@@ -329,6 +361,9 @@ void HapticDevice::StopHapticDevice() {
 
 // 力反馈循环
 int _stdcall SetHapticState(void* pParam) {
+	QueryPerformanceFrequency(&hapFreq);
+	QueryPerformanceCounter(&hap_t1);
+
 	HapticDevice* hapticDevice = (HapticDevice*)pParam;
 
 	if (!hapticDevice->m_hapticThreadRunFlag)
@@ -336,21 +371,21 @@ int _stdcall SetHapticState(void* pParam) {
 	hapticDevice->m_hapticThreadRunFlag = true;
 	if (hapticDevice->m_stopFlag) {
 		UDLog("力反馈线程准备退出");
-		Sleep(50);
+		Sleep(10);
 		return -1;
 	}
-	//cudaSetDevice(int deviceId);
+	
+	
 	Solver& solver = g_simManager->m_softHapticSolver;
 	float adsorbForceLen = 0;
 	int collidedNum = 0;
+	cudaSetDevice(g_ID_SoftHaptic);
 	// 更新表面弹簧顶点的指导向量
-	runUpdateSurfaceDDir();
+	runUpdateSurfaceDDir();	
 	///////////////////////////////////////////////////////////////////////////////
-	solver.HapticCollideTriVert();
+	solver.HapticCollideTriVert();	
 	solver.MergeCollisionInfoTriVert();
 
-	colNum_lastlast = colNum_last;
-	colNum_last = collidedNum;
 	cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
 
 	for (int index = 0; index < solver.m_operatorTransList.size(); index++) {
@@ -403,6 +438,7 @@ int _stdcall SetHapticState(void* pParam) {
 	////////////////////////////////////////////////////////////////////
 	cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
 	solver.colNumInfo << collidedNum << endl;
+
 	/********************表面网格仿真********************/
 	// 计算初始状态
 	runcalculateSTMU(solver.m_dampingForTriVert, solver.sv_dt);
@@ -412,16 +448,20 @@ int _stdcall SetHapticState(void* pParam) {
 	float rho = 0.9992f;
 	for (int i = 0; i < 3; i++) {
 		// 清空弹簧力、碰撞力
+		
 		cudaMemset(springVertForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
 		cudaMemset(springDiag_d, 0.0f, springVertNum_d * 3 * sizeof(float));
 		cudaMemset(springVertCollisionDiag_d, 0.0f, springVertNum_d * 3 * sizeof(float));
 		cudaMemset(springVertCollisionForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-		cudaMemset(gripper_adsorb_force, 0.0f, gripper_num * 3 * sizeof(float));
 		printCudaError("runClearCollisionMU");
 
 		runCollisionResponse(200.0f);
 		// 计算弹簧力-表面网格
 		runcalculateIFMU(100.0f);
+
+		cudaMemcpy(tetVertPos_forTri, solver.tetVertPos_bridge.data(),
+			solver.tetVertPos_bridge.size() * sizeof(float), cudaMemcpyHostToDevice);
+		printCudaError("cudaMemcpy tetVertPos_forTri");
 		//表面网格顶点与四面体顶点之间的Rest-Pos约束
 		runcalculateRestPosForceWithTetPos_vCAG(solver.tv_minStiffnessSV2TV, solver.tv_maxStiffnessSV2TV);
 
@@ -436,61 +476,29 @@ int _stdcall SetHapticState(void* pParam) {
 	for (int i = 0; i < hapticDevice->m_operatorList.size(); i++) {
 		HapticDevice::OperatorInfo& tool = hapticDevice->m_operatorList[i];
 		int id = tool.deviceHandle;
-		//assert(id >= 0);
+		// 读取设备数据
+		hapticDevice->update_phantom(id);
+		hapticDevice->get_stylus_matrix(id, &tool.M);
+		memcpy(tool.buffer, tool.M, 16 * sizeof(float));
+		// mm单位改为cm单位
+		tool.translator.Trans2World(tool.buffer, 0.1);
 
-		if (g_loadQhBuffer)
-		{
-			auto fptr = solver.m_operationLoader[i];
-			if (fptr != nullptr)
-			{
-				int readSuccessNum = fscanf(fptr, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
-					&tool.buffer[0], &tool.buffer[1], &tool.buffer[2], &tool.buffer[3],
-					&tool.buffer[4], &tool.buffer[5], &tool.buffer[6], &tool.buffer[7],
-					&tool.buffer[8], &tool.buffer[9], &tool.buffer[10], &tool.buffer[11],
-					&tool.buffer[12], &tool.buffer[13], &tool.buffer[14], &tool.buffer[15],
-					&tool.buffer[16], &tool.buffer[17], &tool.buffer[18]);
-				if (readSuccessNum == 19)
-					memcpy(tool.M, tool.buffer, 16 * sizeof(float));
-				else
-				{
-					solver.m_operationLoader[i] = nullptr;
-				}
-			}
-			else
-			{
-				g_loadQhBuffer = false;
-				string filename = "../../data/LoadRecord/" + to_string(i) + ".record";
-				solver.m_operationLoader[i] = fopen(filename.c_str(), "r");
-			}
+		// 移动工具的初始位置，用于Phantom工具的肝脏场景
+		tool.buffer[14] -= 12;
+
+		tool.bt0 = hapticDevice->get_stylus_switch(id, 0);
+		tool.bt1 = hapticDevice->get_stylus_switch(id, 1);
+		if (tool.bt0) {
+			tool.anglei += AngleDelta;
+			tool.anglei = min(tool.anglei, MaxAngleI);
 		}
-		else
-		{
-			// 读取设备数据
-			hapticDevice->update_phantom(id);
-			hapticDevice->get_stylus_matrix(id, &tool.M);
-			memcpy(tool.buffer, tool.M, 16 * sizeof(float));
-			// 毫米单位改为厘米单位
-			tool.translator.Trans2World(tool.buffer, 0.1);
-
-			// 移动工具的初始位置，用于Phantom工具的肝脏场景
-			tool.buffer[14] -= 12;
-
-			tool.bt0 = hapticDevice->get_stylus_switch(id, 0);
-			tool.bt1 = hapticDevice->get_stylus_switch(id, 1);
-			if (tool.bt0) {
-				tool.anglei += AngleDelta;
-				tool.anglei = min(tool.anglei, MaxAngleI);
-			}
-			else {
-				tool.anglei -= AngleDelta;
-				tool.anglei = max(tool.anglei, 0);
-			}
-			tool.buffer[16] = 1 - float(tool.anglei) / MaxAngleI;
-			tool.buffer[17] = 0;
-			tool.buffer[18] = tool.bt1;
+		else {
+			tool.anglei -= AngleDelta;
+			tool.anglei = max(tool.anglei, 0);
 		}
-
-
+		tool.buffer[16] = 1 - float(tool.anglei) / MaxAngleI;
+		tool.buffer[17] = 0;
+		tool.buffer[18] = tool.bt1;
 		// 设置 solver 中的 qh
 		UpdateQH(i, tool.buffer);
 
@@ -499,15 +507,13 @@ int _stdcall SetHapticState(void* pParam) {
 		ComputeOperatorForce(i, force);
 		tool.translator.TransForce2Device(force);
 		memcpy(solver.m_operatorOutput6DForceList[i].data(), force, 6 * sizeof(float));
-
-
 		if (id >= 0)
 			hapticDevice->send_phantom_force(id, force);
 	}
-
+	QueryPerformanceCounter(&hap_t2);
+	solver.m_hapFrameTime = (hap_t2.QuadPart - hap_t1.QuadPart) / (double)hapFreq.QuadPart;
 	return 0;
 }
-
 
 DWORD RunHapticState(LPVOID lpvThreadParam) {
 	HapticDevice* hapticDevice = (HapticDevice*)lpvThreadParam;
@@ -515,176 +521,120 @@ DWORD RunHapticState(LPVOID lpvThreadParam) {
 	if (!hapticDevice->m_hapticThreadRunFlag)
 		UDLog("力反馈线程开始运行");
 	hapticDevice->m_hapticThreadRunFlag = true;
-	if (hapticDevice->m_stopFlag) {
-		UDLog("力反馈线程准备退出");
-		Sleep(50);
-		return -1;
-	}
+	cudaSetDevice(g_ID_SoftHaptic);
+	while (!hapticDevice->m_stopFlag) {
+		QueryPerformanceFrequency(&hapFreq);
+		QueryPerformanceCounter(&hap_t1);
 
-	Solver& solver = g_simManager->m_softHapticSolver;
-	float adsorbForceLen = 0;
-	int collidedNum = 0;
-	// 更新表面弹簧顶点的指导向量
-	runUpdateSurfaceDDir();
-	///////////////////////////////////////////////////////////////////////////////
-	solver.HapticCollideTriVert();
-	solver.MergeCollisionInfoTriVert();
+		Solver& solver = g_simManager->m_softHapticSolver;
+		float adsorbForceLen = 0;
+		int collidedNum = 0;
+		// 更新表面弹簧顶点的指导向量
+		runUpdateSurfaceDDir();
+		///////////////////////////////////////////////////////////////////////////////
+		solver.HapticCollideTriVert();
+		solver.MergeCollisionInfoTriVert();
+		cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
 
-	colNum_lastlast = colNum_last;
-	colNum_last = collidedNum;
-	cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
+		for (int index = 0; index < solver.m_operatorTransList.size(); index++) {
+			auto& operatorTrans = solver.m_operatorTransList[index];
+			// 获取拖拽的合力
+			// 夹取
+			std::vector<float> adsorbForce(3);
+			cudaMemcpy(adsorbForce.data(), &gripper_adsorb_force[index * 3], 3 * sizeof(float), cudaMemcpyDeviceToHost);
+			// 投影夹取力到工具轴线方向，更加稳定
+			float AB = adsorbForce[0] * operatorTrans.dirg[0] + adsorbForce[1] * operatorTrans.dirg[1] + adsorbForce[2] * operatorTrans.dirg[2];
+			float BB = operatorTrans.dirg[0] * operatorTrans.dirg[0] + operatorTrans.dirg[1] * operatorTrans.dirg[1] + operatorTrans.dirg[2] * operatorTrans.dirg[2];
+			adsorbForce[0] = AB / BB * operatorTrans.dirg[0];
+			adsorbForce[1] = AB / BB * operatorTrans.dirg[1];
+			adsorbForce[2] = AB / BB * operatorTrans.dirg[2];
 
-	for (int index = 0; index < solver.m_operatorTransList.size(); index++) {
-		auto& operatorTrans = solver.m_operatorTransList[index];
-		// 获取拖拽的合力
-		// 夹取
-		std::vector<float> adsorbForce(3);
-		cudaMemcpy(adsorbForce.data(), &gripper_adsorb_force[index * 3], 3 * sizeof(float), cudaMemcpyDeviceToHost);
-		// 投影夹取力到工具轴线方向，更加稳定
-		float AB = adsorbForce[0] * operatorTrans.dirg[0] + adsorbForce[1] * operatorTrans.dirg[1] + adsorbForce[2] * operatorTrans.dirg[2];
-		float BB = operatorTrans.dirg[0] * operatorTrans.dirg[0] + operatorTrans.dirg[1] * operatorTrans.dirg[1] + operatorTrans.dirg[2] * operatorTrans.dirg[2];
-		adsorbForce[0] = AB / BB * operatorTrans.dirg[0];
-		adsorbForce[1] = AB / BB * operatorTrans.dirg[1];
-		adsorbForce[2] = AB / BB * operatorTrans.dirg[2];
+			adsorbForceLen = sqrt(adsorbForce[0] * adsorbForce[0] + adsorbForce[1] * adsorbForce[1] + adsorbForce[2] * adsorbForce[2]);
+			if (adsorbForceLen > 1e-5) {
+				operatorTrans.collidedNum++;
 
-		adsorbForceLen = sqrt(adsorbForce[0] * adsorbForce[0] + adsorbForce[1] * adsorbForce[1] + adsorbForce[2] * adsorbForce[2]);
-		if (adsorbForceLen > 1e-5) {
-			operatorTrans.collidedNum++;
+				// 夹取力的深度：夹取力的大小
+				operatorTrans.collidedVertDepth.push_back(-adsorbForceLen / solver.k_c);
 
-			// 夹取力的深度：夹取力的大小
-			operatorTrans.collidedVertDepth.push_back(-adsorbForceLen / solver.k_c);
+				// 夹取力的作用点：旋转中心
+				vec3 qg = { operatorTrans.qg[0], operatorTrans.qg[1], operatorTrans.qg[2] };
+				vec3 omega = { operatorTrans.qg[3], operatorTrans.qg[4], operatorTrans.qg[5] };
+				vec3 graspPoint = solver.m_hapticSolver.calculateGraspPoint(qg, omega, operatorTrans.graspL);
+				operatorTrans.collidedVertPos.push_back(graspPoint[0]);
+				operatorTrans.collidedVertPos.push_back(graspPoint[1]);
+				operatorTrans.collidedVertPos.push_back(graspPoint[2]);
 
-			// 夹取力的作用点：旋转中心
-			vec3 qg = { operatorTrans.qg[0], operatorTrans.qg[1], operatorTrans.qg[2] };
-			vec3 omega = { operatorTrans.qg[3], operatorTrans.qg[4], operatorTrans.qg[5] };
-			vec3 graspPoint = solver.m_hapticSolver.calculateGraspPoint(qg, omega, operatorTrans.graspL);
-			operatorTrans.collidedVertPos.push_back(graspPoint[0]);
-			operatorTrans.collidedVertPos.push_back(graspPoint[1]);
-			operatorTrans.collidedVertPos.push_back(graspPoint[2]);
+				// 夹取力的方向
+				operatorTrans.collidedVertNonPenetrationDir.push_back(adsorbForce[0] / adsorbForceLen);
+				operatorTrans.collidedVertNonPenetrationDir.push_back(adsorbForce[1] / adsorbForceLen);
+				operatorTrans.collidedVertNonPenetrationDir.push_back(adsorbForce[2] / adsorbForceLen);
+			}
 
-			// 夹取力的方向
-			operatorTrans.collidedVertNonPenetrationDir.push_back(adsorbForce[0] / adsorbForceLen);
-			operatorTrans.collidedVertNonPenetrationDir.push_back(adsorbForce[1] / adsorbForceLen);
-			operatorTrans.collidedVertNonPenetrationDir.push_back(adsorbForce[2] / adsorbForceLen);
+			// 根据上述的碰撞信息更新虚拟位姿
+			solver.UpdateQG_6DOF(
+				operatorTrans.qh,
+				operatorTrans.graspL,
+				operatorTrans.collidedNum,
+				operatorTrans.collidedVertDepth.data(),
+				operatorTrans.collidedVertPos.data(),
+				operatorTrans.collidedVertNonPenetrationDir.data(),
+				operatorTrans.qg,
+				operatorTrans.dirg,
+				operatorTrans.buffer_graph);
 		}
 
-		// 根据上述的碰撞信息更新虚拟位姿
-		solver.UpdateQG_6DOF(
-			operatorTrans.qh,
-			operatorTrans.graspL,
-			operatorTrans.collidedNum,
-			operatorTrans.collidedVertDepth.data(),
-			operatorTrans.collidedVertPos.data(),
-			operatorTrans.collidedVertNonPenetrationDir.data(),
-			operatorTrans.qg,
-			operatorTrans.dirg,
-			operatorTrans.buffer_graph);
-	}
+		////////////////////////////////////////////////////////////////////
+		cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
+		solver.colNumInfo << collidedNum << endl;
+		/********************表面网格仿真********************/
+		// 计算初始状态
+		runcalculateSTMU(solver.m_dampingForTriVert, solver.sv_dt);
 
-	////////////////////////////////////////////////////////////////////
-	cudaMemcpy(&collidedNum, hapticCollisionNum_d, sizeof(int), cudaMemcpyDeviceToHost);
-	solver.colNumInfo << collidedNum << endl;
-	/********************表面网格仿真********************/
-	// 计算初始状态
-	runcalculateSTMU(solver.m_dampingForTriVert, solver.sv_dt);
+		//迭代求解
+		int omega = 1.0;
+		float rho = 0.9992f;
+		for (int i = 0; i < 3; i++) {
+			// 清空弹簧力、碰撞力
+			cudaMemset(springVertForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
+			cudaMemset(springDiag_d, 0.0f, springVertNum_d * 3 * sizeof(float));
+			cudaMemset(springVertCollisionDiag_d, 0.0f, springVertNum_d * 3 * sizeof(float));
+			cudaMemset(springVertCollisionForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
+			printCudaError("runClearCollisionMU");
 
-	//迭代求解
-	int omega = 1.0;
-	float rho = 0.9992f;
-	for (int i = 0; i < 3; i++) {
-		// 清空弹簧力、碰撞力
-		cudaMemset(springVertForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-		cudaMemset(springDiag_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-		cudaMemset(springVertCollisionDiag_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-		cudaMemset(springVertCollisionForce_d, 0.0f, springVertNum_d * 3 * sizeof(float));
-		cudaMemset(gripper_adsorb_force, 0.0f, gripper_num * 3 * sizeof(float));
-		printCudaError("runClearCollisionMU");
+			runCollisionResponse(200.0f);
+			// 计算弹簧力-表面网格
+			runcalculateIFMU(100.0f);
+			//cudaMemcpyPeer(tetVertPos_forTri, g_ID_SoftHaptic, tetVertPos_d, g_ID_SimRender, tetVertNum_d * 3 * sizeof(float));
+			//printCudaError("cudaMemcpyPeer tetVertPos_forTri");
+			//表面网格顶点与四面体顶点之间的Rest-Pos约束
+			runcalculateRestPosForceWithTetPos_vCAG(solver.tv_minStiffnessSV2TV, solver.tv_maxStiffnessSV2TV);
 
-		runCollisionResponse(200.0f);
-		// 计算弹簧力-表面网格
-		runcalculateIFMU(100.0f);
-		//表面网格顶点与四面体顶点之间的Rest-Pos约束
-		runcalculateRestPosForceWithTetPos_vCAG(solver.tv_minStiffnessSV2TV, solver.tv_maxStiffnessSV2TV);
-
-		// 更新位置
-		omega = 4 / (4 - rho * rho * omega);
-		runcalculatePosMU(omega, solver.sv_dt);
-	}
-
-	//更新速度-表面网格
-	runcalculateVMU(solver.sv_dt);
-
-	for (int i = 0; i < hapticDevice->m_operatorList.size(); i++) {
-		HapticDevice::OperatorInfo& tool = hapticDevice->m_operatorList[i];
-		int id = tool.deviceHandle;
-		//assert(id >= 0);
-
-		if (g_loadQhBuffer)
-		{
-			auto fptr = solver.m_operationLoader[i];
-			if (fptr != nullptr)
-			{
-				int readSuccessNum = fscanf(fptr, "%f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n",
-					&tool.buffer[0], &tool.buffer[1], &tool.buffer[2], &tool.buffer[3],
-					&tool.buffer[4], &tool.buffer[5], &tool.buffer[6], &tool.buffer[7],
-					&tool.buffer[8], &tool.buffer[9], &tool.buffer[10], &tool.buffer[11],
-					&tool.buffer[12], &tool.buffer[13], &tool.buffer[14], &tool.buffer[15],
-					&tool.buffer[16], &tool.buffer[17], &tool.buffer[18]);
-				if (readSuccessNum == 19)
-					memcpy(tool.M, tool.buffer, 16 * sizeof(float));
-				else
-				{
-					solver.m_operationLoader[i] = nullptr;
-				}
-			}
-			else
-			{
-				g_loadQhBuffer = false;
-				string filename = "../../data/LoadRecord/" + to_string(i) + ".record";
-				solver.m_operationLoader[i] = fopen(filename.c_str(), "r");
-			}
+			// 更新位置
+			omega = 4 / (4 - rho * rho * omega);
+			runcalculatePosMU(omega, solver.sv_dt);
 		}
-		else
-		{
-			// 读取设备数据
-			hapticDevice->update_phantom(id);
-			hapticDevice->get_stylus_matrix(id, &tool.M);
-			memcpy(tool.buffer, tool.M, 16 * sizeof(float));
-			// 毫米单位改为厘米单位
-			tool.translator.Trans2World(tool.buffer, 0.1);
+		//更新速度-表面网格
+		runcalculateVMU(solver.sv_dt);
 
-			// 移动工具的初始位置，用于Phantom工具的肝脏场景
-			tool.buffer[14] -= 12;
-
-			tool.bt0 = hapticDevice->get_stylus_switch(id, 0);
-			tool.bt1 = hapticDevice->get_stylus_switch(id, 1);
-			if (tool.bt0) {
-				tool.anglei += AngleDelta;
-				tool.anglei = min(tool.anglei, MaxAngleI);
-			}
-			else {
-				tool.anglei -= AngleDelta;
-				tool.anglei = max(tool.anglei, 0);
-			}
-			tool.buffer[16] = 1 - float(tool.anglei) / MaxAngleI;
-			tool.buffer[17] = 0;
-			tool.buffer[18] = tool.bt1;
+		for (int i = 0; i < hapticDevice->m_operatorList.size(); i++) {
+			HapticDevice::OperatorInfo& tool = hapticDevice->m_operatorList[i];
+			HapticDevice::OperatorInfo& toolMotion = tool.toolMotion[tool.motionCount];
+			// 设置 solver 中的 qh
+			UpdateQH(i, tool.toolMotion[tool.motionCount].buffer);
+			tool.motionCount++;
+			tool.motionCount = tool.motionCount % tool.toolMotion.size();
+			// 计算反馈力
+			float force[6] = { 0 };
+			ComputeOperatorForce(i, force);
+			tool.translator.TransForce2Device(force);
+			memcpy(solver.m_operatorOutput6DForceList[i].data(), force, 6 * sizeof(float));
 		}
 
+		QueryPerformanceCounter(&hap_t2);
+		solver.m_hapFrameTime = (hap_t2.QuadPart - hap_t1.QuadPart) / (double)hapFreq.QuadPart;
 
-		// 设置 solver 中的 qh
-		UpdateQH(i, tool.buffer);
-
-		// 计算反馈力
-		float force[6] = { 0 };
-		ComputeOperatorForce(i, force);
-		tool.translator.TransForce2Device(force);
-		memcpy(solver.m_operatorOutput6DForceList[i].data(), force, 6 * sizeof(float));
-
-
-		if (id >= 0)
-			hapticDevice->send_phantom_force(id, force);
 	}
-
-	return 0;
+	UDLog("力反馈线程准备退出");
+	Sleep(10);
+	return -1;
 }

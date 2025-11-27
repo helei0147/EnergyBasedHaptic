@@ -1,6 +1,8 @@
 #include "gpuvar.h"
 #include "gpufun.h"
 
+
+
 // 全局变量
 float gripper_max_angle = 0.9f;
 float gripper_min_angle = 0.1f;
@@ -76,8 +78,8 @@ void PropagateCollision(void)
 	int blockNum = (springVertNum_d + threadNum - 1) / threadNum;
 
 	propagateCollision << <blockNum, threadNum >> > (
-		springVertisCollide_d, springVertPos_d, springVertCollisionDepth_d, springVertCollisionPos_d, springVertCollisionToolFlag_d,
-		springVert2TetVertMapping_d,
+		springVertisCollide_forTet, springVertPos_forTet, springVertCollisionDepth_forTet, springVertCollisionPos_forTet, springVertCollisionToolFlag_forTet,
+		springVert2TetVertMapping_forTet,
 		tetVertisCollide_d, tetVertPos_d, tetVertCollisionDepth_d, tetVertCollisionPos_d, tetVertCollisionToolFlag_d, 
 		tvCollisionNum_d, springVertNum_d);
 
@@ -490,8 +492,8 @@ void runHapticCDSV_cylinder(
 	float cylinderLastPosX, float cylinderLastPosY, float cylinderLastPosZ,
 	float cylinderDirX, float cylinderDirY, float cylinderDirZ,
 	float cylinderRadius, float cylinderLength,
-	int toolFlag
-) {
+	int toolFlag) 
+{
 	int threadNum = 512;
 	int blockNum = (springVertNum_d + threadNum - 1) / threadNum;
 
@@ -589,6 +591,7 @@ void runApplyCollision(float tetVertPosX, float tetVertPosY, float tetVertPosZ,
 
 void runMergeCollisionInfoTet()
 {
+		
 	int  threadNum = 512;
 	int blockNum = (tetVertNum_d + threadNum - 1) / threadNum;
 
@@ -597,14 +600,14 @@ void runMergeCollisionInfoTet()
 	hapticCalculatePrefixSum << <blockNum, threadNum, threadNum * sizeof(unsigned int) >> > (
 		tetVertisCollide_d, tetVertQueueIndex_d,
 		tetVertAuxSumArray_d, tetVertNum_d);
-
-	//再根据索引，填写碰撞点到队列
+	printCudaError("runMergeCollisionInfoTet prefix");
+	////再根据索引，填写碰撞点到队列
 	hapticAddCollisionToQueue << <blockNum, threadNum >> > (
 		tetVertisCollide_d, tetVertPos_d, tetVertCollisionDepth_d, tetVertCollisionPos_d, tetVertCollisionToolFlag_d,
 		tetVertCollidedBuffer_d, tetVertCollidedDepth_d, tetVertCollidedPos_d, tetVertCollidedToolFlag_d,
 		tetVertQueueIndex_d, tetVertAuxSumArray_d,
 		tetVertNum_d);
-	printCudaError("runMergeCollisionInfoTet");
+	printCudaError("runMergeCollisionInfoTet toqueue");
 }
 
 void runMergeCollisionInfoTriVert()
@@ -618,6 +621,7 @@ void runMergeCollisionInfoTriVert()
 		springVertisCollide_d, springVertQueueIndex_d,
 		springVertAuxSumArray_d, springVertNum_d);
 
+	printCudaError("runMergeCollisionInfoTet prefix");
 	//再根据索引，填写碰撞点到队列
 	hapticAddCollisionToQueueTri << <blockNum, threadNum >> > (
 		springVertisCollide_d, springVertPos_d, springVertNonPenetrationDir_d, springVertCollisionDepth_d, springVertCollisionPos_d, springVertCollisionToolFlag_d,
@@ -625,7 +629,7 @@ void runMergeCollisionInfoTriVert()
 		springVertQueueIndex_d, springVertAuxSumArray_d,
 		springVertNum_d);
 
-	printCudaError("runMergeCollisionInfoTet");
+	printCudaError("runMergeCollisionInfoTet toqueue");
 }
 
 __global__ void hapticCollisionDetect_gripper_half(
@@ -898,4 +902,13 @@ void runHapticCollisionDetect_gripper(
         cudaMemset(sv_grab_flag, 0, 1 * sizeof(unsigned int) * gripper_num * springVertNum_d);
 		*closeFlag = false;
 	}
+}
+
+__global__ void getColNum(unsigned char* isCollide, int* colNum, int vertNum)
+{
+	unsigned int threadid = blockIdx.x * blockDim.x + threadIdx.x;
+	if (threadid >= vertNum) return;
+
+	if (isCollide[threadid] > 0)
+		atomicAdd(colNum, 1);
 }

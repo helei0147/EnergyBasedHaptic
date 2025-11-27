@@ -11,6 +11,10 @@ LARGE_INTEGER tbegin;
 LARGE_INTEGER tend;
 
 
+int g_ID_SimRender = -1;
+int g_ID_SoftHaptic = -1;
+int g_nv_deviceNum = 0;
+bool g_asyncSimMode = false;// 只有在多GPU的情况下才会为真，用cpu存储作为中转进行多GPU之间的数据交换。
 
 SimManager::SimManager() {
 
@@ -51,8 +55,10 @@ void SimManager::ComputeNormals() {
 
 void SimManager::PDUpdate()
 {
+	cudaSetDevice(g_ID_SimRender);
 	m_softHapticSolver.Step();
-	m_softHapticSolver.transferFromGPUToCPUForRender();
+	cudaSetDevice(g_ID_SoftHaptic);
+	m_softHapticSolver.HapticSyn();
 }
 
 void SimManager::PDInit()
@@ -89,27 +95,42 @@ void SimManager::InitCuda() {
 			propertySuccess[i] = false;
 	}
 
-	size_t maxMemSize = 0;
-	int deviceID = -1;
-	int count = 0;
-	for (i = 0; i < nvDeviceNum; i++) {
-		if (propertySuccess[i] )
-			if (props[i].major >= 1)
-				if (props[i].totalGlobalMem > maxMemSize) {
-					maxMemSize = props[i].totalGlobalMem;
-					deviceID = i;
-					count ++;
-				}
+
+	if (nvDeviceNum == 1&& propertySuccess[0] && props[0].major >= 1) {
+		g_ID_SimRender = 0;
+		g_ID_SoftHaptic = 0;
 	}
 
-	if (deviceID == -1) {
+	if (nvDeviceNum > 1) {
+		g_asyncSimMode = true;
+		size_t maxMemSize = 0;
+		for (i = 0; i < nvDeviceNum; i++) {
+			if (propertySuccess[i])
+				if (props[i].major >= 1)
+					if (props[i].totalGlobalMem > maxMemSize) {
+						maxMemSize = props[i].totalGlobalMem;
+						g_ID_SimRender = i;
+					}
+		}
+
+		maxMemSize = 0;
+		for (i = 0; i < nvDeviceNum; i++) {
+			if (propertySuccess[i] && i != g_ID_SimRender)
+				if (props[i].major >= 1)
+					if (props[i].totalGlobalMem > maxMemSize) {
+						maxMemSize = props[i].totalGlobalMem;
+						g_ID_SoftHaptic = i;
+					}
+		}
+	}
+
+	if (g_ID_SimRender == -1) {
 		UDError("没有设备支持CUDA");
 		return;
 	}
-	
-	cudaSetDevice(deviceID);
-	UDLog("CUDA设备名称：" + std::string(props[deviceID].name));
-
+	m_cudaDeviceReady = true;
+	UDLog("CUDA设备名称：" + std::string(props[g_ID_SimRender].name));
+	g_nv_deviceNum = nvDeviceNum;
 }
 
 void SimManager::CloseManager() {

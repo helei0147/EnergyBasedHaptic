@@ -125,11 +125,11 @@ void GrasperObject::UpdateColliders(const std::vector<float>& qg, const std::vec
 	ForcepsTransformer::NormalizeVec3(lowerDirZ);
 
 
-	// debug 传给全局变量用于渲染
-	SetVirtualTool(pos, 
-		pivotDirX, pivotDirY, pivotDirZ,
-		upperDirX, upperDirY, upperDirZ,
-		lowerDirX, lowerDirY, lowerDirZ);
+	//// debug 传给全局变量用于渲染
+	//SetVirtualTool(pos, 
+	//	pivotDirX, pivotDirY, pivotDirZ,
+	//	upperDirX, upperDirY, upperDirZ,
+	//	lowerDirX, lowerDirY, lowerDirZ);
 
 	// 3. 更新碰撞体的位姿
 	SetCylinderCollider(0, pos, pivotDirZ);

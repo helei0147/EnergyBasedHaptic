@@ -39,6 +39,7 @@ float* tetVertToolDistance_d; // 四面体顶点离最近的碰撞体的距离
 int* mapTetVertIdx2TriVertIdx_d; // 从四面体顶点下标映射到绑定的表面三角形顶点下标。内部的对应为-1；
 //四面体顶点是否处于有效状态
 bool* tetVertActive_d;
+float* tetVertPos_forTri;
 
 
 float* tetVertNorm_d; // 外表面三角网格顶点的法向量，对应数组中的部分元素，tetVertNum_d*3
@@ -101,6 +102,13 @@ int* tetVertCollidedToolFlag_d;
 unsigned int* tetVertQueueIndex_d;
 unsigned int* tetVertAuxSumArray_d;
 float* tetVertColVelocityMax_d;
+
+unsigned char* springVertisCollide_forTet;
+float* springVertPos_forTet;
+float* springVertCollisionDepth_forTet;
+float* springVertCollisionPos_forTet;
+int* springVertCollisionToolFlag_forTet;
+int* springVert2TetVertMapping_forTet;
 
 unsigned char* springVertisCollide_d; // 三角网格顶点是否碰撞， springVertNum_d
 unsigned int* springVertQueueIndex_d; // 三角形碰撞队列编号， springVertNum_d
@@ -182,6 +190,7 @@ int* gripper_grab_num; // 夹取区域的点的数量，sizeof(int) * gripper_num
 
 #pragma region 力反馈参数
 int* hapticCollisionNum_d;
+int* hapticCollisionNumForSim_d;
 int* tvCollisionNum_d;
 #pragma endregion
 

@@ -5,8 +5,6 @@
 
 extern float gripper_max_angle;
 extern float gripper_min_angle;
-extern bool g_recordQhBuffer;
-extern bool g_loadQhBuffer;
 
 #define POINT_MERGE_EPS (0.008)
 
@@ -26,6 +24,7 @@ float GetSTTime();
 float GetHapticTime();
 int GetTetVertNum();
 int GetTetNum();
+float GetHapticFrameTime();
 
 // 从collisionbuffer中获取
 int GetCollidedNum();
@@ -87,11 +86,6 @@ void Settv_maxStiffnessSV2TV(float v);
 float Gettv_minStiffnessSV2TV();
 void Settv_minStiffnessSV2TV(float v);
 
-std::vector<float> GetVirtualTool();
-void SetVirtualTool(float* pos,
-	float* pivotDirX, float* pivotDirY, float* pivotDirZ,
-	float* upperDirX, float* upperDirY, float* upperDirZ,
-	float* lowerDirX, float* lowerDirY, float* lowerDirZ);
 
 
 inline float LengthSq(const float* p1, const const float* p2) {
@@ -105,7 +99,5 @@ inline float LengthSq(const float* p1, const const float* p2) {
 void UpdateQH(int operatorIndex, float* buffer);
 
 void ComputeOperatorForce(int operatorIndex, float* f);
-
-std::vector<float> GetVirtualBuffer();
 
 int GetCollidedNum(int index);

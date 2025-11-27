@@ -18,6 +18,7 @@ int runcalculatePOS(float omega, float dt);
 int runcalculateV(float dt);
 int runUpdateSurfaceDDir();
 void printCudaError(const char* funcName);
+void checkPointerLocation(void* ptr, const char* name="");
 
 #pragma endregion
 
@@ -37,12 +38,9 @@ __device__ void DeviceMat3AtomicAddMat3(float* m, float* result);
 __device__ void DeviceMatrixDotVec(float* m, float* v, float* result);
 #pragma endregion
 
-#pragma region  cuda_pd_MU.cu函数
+#pragma region
 
 extern "C" int runcalculateSTMU(float damping, float dt);
-
-//清除碰撞信息
-extern "C" int runClearCollisionMU();
 
 extern "C" int runcalculateRestPosForceWithTetPos_vCAG(float minStiffnessTV2SV, float maxStiffnessTV2SV);
 extern "C" int runcalculateVMU(float dt);
@@ -150,7 +148,8 @@ __device__ float tetDotMU_D(float* a, float* b);
 #pragma endregion
 
 __global__ void resetVertToolDistance(float* springVertToolDistance, int springVertNum);
-int runResetVertToolDistance();
+int runResetSpringVertToolDistance();
+int runResetTetVertToolDistance();
 
 //计算前缀和
 __global__ void hapticCalculatePrefixSum(

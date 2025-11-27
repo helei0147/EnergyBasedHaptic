@@ -24,9 +24,9 @@ public:
 	std::vector<SoftObject*> m_softObjects;
 	std::vector<std::vector<ToolObject*>> m_toolList;
 	std::vector<int> m_toolIndexList; // 每个操作手对应的工具 id
-
 	Solver m_softHapticSolver;
 	HapticDevice m_hapticDevice;
+	bool m_cudaDeviceReady = false;
 	SimManager();
 	~SimManager();
 	void CloseManager();

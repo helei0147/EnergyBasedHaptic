@@ -1,10 +1,12 @@
 #include <Windows.h>
-#include "Solver.h"
-#include "gpu/gpuvar.h"
-#include "gpu/gpufun.h"
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include "Solver.h"
+#include "SimManager.h"
+#include "gpu/gpuvar.h"
+#include "gpu/gpufun.h"
+
 
 
 Solver::~Solver() {
@@ -48,11 +50,12 @@ void Solver::ApplyGravity() {
 }
 
 void Solver::CopyToGPU() {
+	SimManager* m = (SimManager*)m_manager;
 	// 四面体顶点信息
 	tetVertNum_d = GetTetVertNum();
 	tetNum_d = GetTetNum();
+	cudaSetDevice(g_ID_SimRender);
 	// 四面体顶点信息
-
 	printf("tetVertNum:%d tetNum:%d\n", tetVertNum_d, tetNum_d);
 	cudaMemcpy(tetVertPos_d, m_tetVertPos.data(), m_tetVertPos.size() * sizeof(float), cudaMemcpyHostToDevice);
 	printCudaError("CopyToGPU tetVertPos_d");
@@ -78,6 +81,8 @@ void Solver::CopyToGPU() {
 	printCudaError("CopyToGPU tetStiffness_d");
 	cudaMemcpy(mapTetVertIdx2TriVertIdx_d, m_tet2triMapping.data(), m_tet2triMapping.size() * sizeof(int), cudaMemcpyHostToDevice);
 	printCudaError("CopyToGPU mapping tet");
+
+	cudaSetDevice(g_ID_SoftHaptic);
 	// 三角网格信息
 	springVertNum_d = GetSpringVertNum();
 	int springNum = GetSpringNum();
@@ -85,22 +90,29 @@ void Solver::CopyToGPU() {
 	
 	printf("triVertNum:%d springNum:%d\n", springVertNum_d, springNum);
 	cudaMemcpy(springVertPos_d, m_springVertPos.data(), m_springVertPos.size() * sizeof(float), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springVertPos_d");
 	cudaMemcpy(springVertMass_d, m_springVertMass.data(), m_springVertMass.size()*sizeof(float), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springVertMass_d");
 	cudaMemcpy(springVertFixed_d, m_springVertFixed.data(), m_springVertFixed.size() * sizeof(float), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springVertFixed_d");
 	// 三角网格弹簧信息
 	cudaMemcpy(springIndex_d, m_springIndex.data(), m_springIndex.size()*sizeof(int), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springIndex_d");
 	cudaMemcpy(springOrgLength_d, m_springOrgLength.data(), m_springOrgLength.size() * sizeof(float), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springOrgLength_d");
 	cudaMemcpy(springDiag_d, m_springDiag.data(), m_springDiag.size() * sizeof(float), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springDiag_d");
 	cudaMemcpy(springStiffness_d, m_springStiffness.data(), m_springStiffness.size() * sizeof(float), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springStiffness_d");
 
 	cudaMemcpy(springActive_d, m_springActive.data(), m_springActive.size() * sizeof(bool), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springActive_d");
 	cudaMemcpy(springVertActive_d, m_springVertActive.data(), m_springVertActive.size() * sizeof(bool), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springVertActive_d");
 	cudaMemcpy(springVert2TetVertMapping_d, m_subedtri2tetMapping.data(), m_subedtri2tetMapping.size() * sizeof(int), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU springVert2TetVertMapping_d");
 	cudaMemcpy(triIndex_d, m_subedTriIdx.data(), m_subedTriIdx.size() * sizeof(int), cudaMemcpyHostToDevice);
+	printCudaError("CopyToGPU triIndex_d");
 	printCudaError("CopyToGPU");
 }
 
-void Solver::transferFromGPUToCPUForRender() {
-	cudaMemcpy(m_springVertPos.data(), springVertPos_d, m_springVertPos.size() * sizeof(float), cudaMemcpyDeviceToHost);
-	printCudaError("transferFromGPUToCPUForRender");
-}

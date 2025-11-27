@@ -12,8 +12,6 @@ char g_sceneName[256] = "cholecystectomy";// "cholecystectomy", "gynaecology", "
 
 Application* g_renderManager = nullptr;
 SimManager* g_simManager = nullptr;
-bool g_recordQhBuffer = false;
-bool g_loadQhBuffer = false;
 
 void Renderer::doUI() {
 	ImGui::GetStyle().Alpha = 0.5f;
@@ -21,6 +19,7 @@ void Renderer::doUI() {
 	ImGui::Begin(u8"Paras");
 	ImGui::Text(u8"SimRate: %.2f", 1.0 / GetSimTime());
 	ImGui::Text(u8"FrameRate: %.2f", 1.0 / GetFrameTime());
+	ImGui::Text(u8"HapticRate: %.2f", 1.0 / GetHapticFrameTime());
 	ImGui::Text(u8"Tet Num: %d", GetTetNum());
 
 	ImGui::Checkbox("sky", &m_sceneobject->use_sky);
@@ -60,10 +59,7 @@ void Renderer::doUI() {
 	if (ImGui::SliderFloat("tv_maxStiffnessSV2TV", &tv_maxStiffnessSV2TV, 0, 2000)) Settv_maxStiffnessSV2TV(tv_maxStiffnessSV2TV);
 	float tv_minStiffnessSV2TV = Gettv_minStiffnessSV2TV();
 	if (ImGui::SliderFloat("tv_minStiffnessSV2TV", &tv_minStiffnessSV2TV, 0, 100)) Settv_minStiffnessSV2TV(tv_minStiffnessSV2TV);
-
-	ImGui::Checkbox("Record operations", &g_recordQhBuffer);
-	ImGui::Checkbox("Play operations", &g_loadQhBuffer);
-
+	ImGui::End();
 	//抓取力的曲线图
 	ImGui::Begin("Force visualization");
 	static float forcex[90] = {};
@@ -98,6 +94,7 @@ void Renderer::doUI() {
 	ImGui::PlotLines("Torque x", torquex, IM_ARRAYSIZE(torquex), values_offset, nullptr, -1.0f, 1.0f, ImVec2(0, 80.0f));
 	ImGui::PlotLines("Torque y", torquey, IM_ARRAYSIZE(torquey), values_offset, nullptr, -1.0f, 1.0f, ImVec2(0, 80.0f));
 	ImGui::PlotLines("Torque z", torquez, IM_ARRAYSIZE(torquez), values_offset, nullptr, -1.0f, 1.0f, ImVec2(0, 80.0f));
+	ImGui::End();
 }
 
 
@@ -384,22 +381,6 @@ void loadTools(std::string dataFolder = "../../data/", int n = 0) {
 	g_simManager->m_softHapticSolver.m_operatorOutput6DForceList.resize(n);
 
 	g_simManager->m_toolIndexList.resize(n, 0);
-
-	g_simManager->m_softHapticSolver.m_recorder.resize(n);
-	for (int i = 0; i < n; i++)
-	{
-		string filename;
-		filename = "../../data/recordTemp/" + std::to_string(i) + ".record";
-		g_simManager->m_softHapticSolver.m_recorder[i] = fopen(filename.c_str(), "w");
-	}
-	for (int i = 0; i < n; i++)
-	{
-		string filename;
-		filename = "../../data/LoadRecord/" + std::to_string(i) + ".record";
-		FILE* f = fopen(filename.c_str(), "r");
-		g_simManager->m_softHapticSolver.m_operationLoader.push_back(f);
-	}
-
 }
 
 
@@ -478,10 +459,10 @@ int main()
 	g_simManager->InitCuda();
 
 	//配置力反馈设备
-	g_simManager->m_hapticDevice.m_deviceName = {
-	"Default Device", "Right"	};
-	g_simManager->m_hapticDevice.m_deviceCfgFile = {
-	"../../data/TransConfLeft.cfg", "../../data/TransConfRight.cfg"};
+	g_simManager->m_hapticDevice.m_deviceName.push_back("Default Device");
+	g_simManager->m_hapticDevice.m_deviceCfgFile.push_back("../../data/TransConfLeft.cfg");
+	g_simManager->m_hapticDevice.m_deviceMotionFile.push_back("../../data/hapticRecord/0.record");
+
 
 	g_renderManager = Application::Instance();
 	g_renderManager->InitRender(hdrfile, shaderFolder);
@@ -493,8 +474,10 @@ int main()
 	UpateTriangle();
 	int ret = 0;	
 	while (!ret) {
-		g_simManager->PDUpdate();
-		g_simManager->ComputeNormals();
+		if (g_simManager->m_cudaDeviceReady) {
+			g_simManager->PDUpdate();
+			g_simManager->ComputeNormals();
+		}
 		UpdateMesh();
 		ret = g_renderManager->Render();
 	}
@@ -557,6 +540,11 @@ float GetSimTime() {
 
 float GetFrameTime() {
 	return g_simManager->m_softHapticSolver.m_frameTime;
+}
+
+float GetHapticFrameTime()
+{
+	return g_simManager->m_softHapticSolver.m_hapFrameTime;
 }
 
 float GetSTTime() {
@@ -794,30 +782,6 @@ void Settv_minStiffnessSV2TV(float v) {
 	g_simManager->m_softHapticSolver.tv_minStiffnessSV2TV = v;
 }
 
-std::vector<float> GetVirtualTool() {
-	Solver& solver = g_simManager->m_softHapticSolver;
-	return solver.m_virtualTool;
-}
-
-void SetVirtualTool(float* pos,
-	float* pivotDirX, float* pivotDirY, float* pivotDirZ,
-	float* upperDirX, float* upperDirY, float* upperDirZ,
-	float* lowerDirX, float* lowerDirY, float* lowerDirZ) {
-	vector<float>& virtualTool = g_simManager->m_softHapticSolver.m_virtualTool;
-	virtualTool.clear();
-	virtualTool.insert(virtualTool.end(), pos, pos + 3);
-	virtualTool.insert(virtualTool.end(), pivotDirX, pivotDirX + 3);
-	virtualTool.insert(virtualTool.end(), pivotDirY, pivotDirY + 3);
-	virtualTool.insert(virtualTool.end(), pivotDirZ, pivotDirZ + 3);
-	virtualTool.insert(virtualTool.end(), upperDirX, upperDirX + 3);
-	virtualTool.insert(virtualTool.end(), upperDirY, upperDirY + 3);
-	virtualTool.insert(virtualTool.end(), upperDirZ, upperDirZ + 3);
-	virtualTool.insert(virtualTool.end(), lowerDirX, lowerDirX + 3);
-	virtualTool.insert(virtualTool.end(), lowerDirY, lowerDirY + 3);
-	virtualTool.insert(virtualTool.end(), lowerDirZ, lowerDirZ + 3);
-}
-
-
 
 void GetRegion(float* region) {
 	int tvnum = g_simManager->m_softHapticSolver.m_tetVertPos.size() / 3;
@@ -871,10 +835,6 @@ void ComputeOperatorForce(int operatorIndex, float* f) {
 	solver.forceInfoLeft << f[0] << "," << f[1] << "," << f[2] << "," << f[3] << "," << f[4] << "," << f[5] << len_FVC << "," << len_TVC << endl;
 }
 
-std::vector<float> GetVirtualBuffer() {
-	Solver& solver = g_simManager->m_softHapticSolver;
-	return solver.m_operatorTransList[0].buffer_graph;
-}
 
 int GetCollidedNum(int index) {
 	Solver& solver = g_simManager->m_softHapticSolver;
