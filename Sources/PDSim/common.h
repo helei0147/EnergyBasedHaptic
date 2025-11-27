@@ -24,6 +24,7 @@ float GetSTTime();
 float GetHapticTime();
 int GetTetVertNum();
 int GetTetNum();
+int GetSpringVertNum();
 float GetHapticFrameTime();
 
 // 从collisionbuffer中获取

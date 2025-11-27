@@ -21,7 +21,7 @@ void Renderer::doUI() {
 	ImGui::Text(u8"FrameRate: %.2f", 1.0 / GetFrameTime());
 	ImGui::Text(u8"HapticRate: %.2f", 1.0 / GetHapticFrameTime());
 	ImGui::Text(u8"Tet Num: %d", GetTetNum());
-
+	ImGui::Text(u8"Surface Vert Num: %d", GetSpringVertNum());
 	ImGui::Checkbox("sky", &m_sceneobject->use_sky);
 	ImGui::Checkbox("SSAO", &m_sceneobject->enable_ao);
 
@@ -563,6 +563,10 @@ int GetTetVertNum() {
 
 int GetTetNum() {
 	return g_simManager->m_softHapticSolver.GetTetNum();
+}
+
+int GetSpringVertNum() {
+	return g_simManager->m_softHapticSolver.GetSpringVertNum();
 }
 
 
