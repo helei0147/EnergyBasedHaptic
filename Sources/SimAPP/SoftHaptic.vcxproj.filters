@@ -1,0 +1,239 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="源文件\cuda">
+      <UniqueIdentifier>{d93eeefc-f354-450f-a19a-b93e5be835a1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="图形模块">
+      <UniqueIdentifier>{99190a79-d72b-4d39-85cc-1e85e5150ae2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="图形模块\头文件">
+      <UniqueIdentifier>{db01fd81-09eb-480d-bd86-40bbae02407c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="图形模块\3rd">
+      <UniqueIdentifier>{fa5c8ff3-3989-4c48-9fd8-0aa39a1f7fa8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\PDSim\common.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\CylinderCollider.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\EHookObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\EmptyObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\GrasperObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\GripperCollider.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\HapticDevice.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\SimManager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\SoftObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\Solver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\SphereCollider.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\ToolObject.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\gpu\gpufun.h">
+      <Filter>源文件\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\gpu\gpuvar.h">
+      <Filter>源文件\cuda</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\ArcballHelper.h">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\image.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\opengl.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\mesh.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\pystring.h">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\renderer.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\glutils.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\StringHelper.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\FileHelper.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\ImguiHelper.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GLRender\application.hpp">
+      <Filter>图形模块\头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PDSim\calculate.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\PDSim\CylinderCollider.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\EHookObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\EmptyObjec.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\GrasperObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\GripperCollider.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\HapticDevice.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\SimManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\SoftObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\Solver.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\SolverHaptic.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\SolverInit.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\SolverStep.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\SphereCollider.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\ToolObject.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="SimApp.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\glad\src\glad.c">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\stb\src\libstb.c">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\imgui\imgui.cpp">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\imgui\imgui_demo.cpp">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\imgui\imgui_draw.cpp">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\imgui\imgui_impl_glfw.cpp">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\imgui\imgui_impl_opengl3.cpp">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\imgui\imgui_tables.cpp">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\3rd\imgui\imgui_widgets.cpp">
+      <Filter>图形模块\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\application.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\FileHelper.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\image.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\ImguiHelper.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\opengl.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\openglMaterial.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\openglRender.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\openglScene.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\optimus.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\pystring.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\StringHelper.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GLRender\glutils.cpp">
+      <Filter>图形模块</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PDSim\calculate.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\PDSim\gpu\grab.cu">
+      <Filter>源文件\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\PDSim\gpu\spring.cu">
+      <Filter>源文件\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\PDSim\gpu\tet.cu">
+      <Filter>源文件\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\PDSim\gpu\var.cu">
+      <Filter>源文件\cuda</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\PDSim\gpu\collision.cu">
+      <Filter>源文件\cuda</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>

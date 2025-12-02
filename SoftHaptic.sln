@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35919.96 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SimApp", "Sources\SimAPP\SoftHaptic.vcxproj", "{3656D4F0-214E-42D6-B4F3-113FC9063104}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		RDebug|x64 = RDebug|x64
+		RDebug|x86 = RDebug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Debug|x64.ActiveCfg = Debug|x64
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Debug|x64.Build.0 = Debug|x64
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Debug|x86.ActiveCfg = Debug|Win32
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Debug|x86.Build.0 = Debug|Win32
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.RDebug|x64.ActiveCfg = RDebug|x64
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.RDebug|x64.Build.0 = RDebug|x64
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.RDebug|x86.ActiveCfg = RDebug|Win32
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.RDebug|x86.Build.0 = RDebug|Win32
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Release|x64.ActiveCfg = Release|x64
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Release|x64.Build.0 = Release|x64
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Release|x86.ActiveCfg = Release|Win32
+		{3656D4F0-214E-42D6-B4F3-113FC9063104}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {64452219-B961-4061-A8AD-88BB04D30C14}
+	EndGlobalSection
+EndGlobal

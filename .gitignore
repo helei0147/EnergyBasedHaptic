@@ -1,0 +1,23 @@
+﻿################################################################################
+# 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
+################################################################################
+
+/Temp/SimApp/Release
+/Temp/Release
+/.vs/PDQingdao
+/Sources/SimAPP/6dof_time.csv
+/Sources/SimAPP/colNum.csv
+/Sources/SimAPP/deform_time.csv
+/Sources/SimAPP/forceFirst.csv
+/Sources/SimAPP/ForceInfoDeformEnd.csv
+/Sources/SimAPP/LeftToolInfo.csv
+/Sources/SimAPP/qgqhLeft.csv
+/Sources/SimAPP/render_time.csv
+/Sources/SimAPP/Hepatectomy.udlog
+/Sources/SimAPP/outsideFace.obj
+/Temp
+/.vs
+/data/recordTemp/1.record
+/data/frameCnt.txt
+/Sources/SimAPP/imgui.ini
+/Sources/SimAPP/Hepatectomy.simlog

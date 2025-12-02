@@ -1,0 +1,337 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RDebug|Win32">
+      <Configuration>RDebug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RDebug|x64">
+      <Configuration>RDebug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3656D4F0-214E-42D6-B4F3-113FC9063104}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>UDFlexModule</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <CudaToolkitCustomDir>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1</CudaToolkitCustomDir>
+    <ProjectName>SoftHaptic</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.1.props" />
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>../../Bin64/bin</OutDir>
+    <IntDir>../../Temp/$(ProjectName)/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../Bin64/bin</OutDir>
+    <IntDir>../../Temp/$(ProjectName)/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>../../Bin64/bin</OutDir>
+    <IntDir>../../Temp/$(ProjectName)/$(Configuration)/</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;UDFLEXMODULE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;UDFLEXMODULE_EXPORTS;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;_CRT_NONSTDC_NO_DEPRECATE;WIN32;UDMODULE_EXPORTS;GLRelease;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\3rd;..\3rd\eigen;$(CUDA_PATH)\include;..\3rd\STB\include;..\3rd\glm;..\PDSim\gpu;..\3rd\glad\include;..\GLRender\soil2\incs;..\3rd\imgui;..\3rd\fmt\include;..\GLRender;..\3rd\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;cublas.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;fmtd.lib;glfw3.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;../3rd/glfw/lib-vc2019;..\3rd\fmt\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+      <CompileOut>..\..\Temp\$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UDFLEXMODULE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UDFLEXMODULE_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;UDMODULE_EXPORTS;WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;FLEX_DX;USE_MODULE;_CRT_NONSTDC_NO_DEFPRECATES;GLRelease;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>..\3rd;..\3rd\eigen;$(CUDA_PATH)\include;..\3rd\STB\include;..\3rd\glm;..\PDSim\gpu;..\3rd\glad\include;..\GLRender\soil2\incs;..\3rd\fmt\include;..\GLRender;..\3rd\glfw\include;..\3rd\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>Default</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;cublas.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;fmt.lib;glfw3.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;../3rd/glfw/lib-vc2019;..\3rd\fmt\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>
+      </CodeGeneration>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+      <CompileOut>..\..\Temp\$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RDebug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>Disabled</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;UDMODULE_EXPORTS;WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;FLEX_DX;USE_MODULE;_CRT_NONSTDC_NO_DEFPRECATES;GLRelease;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>false</SDLCheck>
+      <AdditionalIncludeDirectories>..\3rd;..\3rd\eigen;$(CUDA_PATH)\include;..\3rd\STB\include;..\3rd\glm;..\PDSim\gpu;..\3rd\glad\include;..\GLRender\soil2\incs;..\3rd\imgui;..\3rd\fmt\include;..\GLRender;..\3rd\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;cublas.lib;cuda.lib;cudadevrt.lib;cudart.lib;cudart_static.lib;fmt.lib;glfw3.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CUDA_PATH)\lib\x64;../3rd/glfw/lib-vc2019;..\3rd\fmt\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <CodeGeneration>
+      </CodeGeneration>
+      <GenerateRelocatableDeviceCode>true</GenerateRelocatableDeviceCode>
+      <CompileOut>..\..\Temp\$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
+    </CudaCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\GLRender\application.hpp" />
+    <ClInclude Include="..\GLRender\ArcballHelper.h" />
+    <ClInclude Include="..\GLRender\FileHelper.hpp" />
+    <ClInclude Include="..\GLRender\image.hpp" />
+    <ClInclude Include="..\GLRender\ImguiHelper.hpp" />
+    <ClInclude Include="..\GLRender\mesh.hpp" />
+    <ClInclude Include="..\GLRender\opengl.hpp" />
+    <ClInclude Include="..\GLRender\pystring.h" />
+    <ClInclude Include="..\GLRender\renderer.hpp" />
+    <ClInclude Include="..\GLRender\StringHelper.hpp" />
+    <ClInclude Include="..\GLRender\glutils.hpp" />
+    <ClInclude Include="..\PDSim\calculate.h" />
+    <ClInclude Include="..\PDSim\common.h" />
+    <ClInclude Include="..\PDSim\CylinderCollider.h" />
+    <ClInclude Include="..\PDSim\EHookObject.h" />
+    <ClInclude Include="..\PDSim\EmptyObject.h" />
+    <ClInclude Include="..\PDSim\gpu\gpufun.h" />
+    <ClInclude Include="..\PDSim\gpu\gpuvar.h" />
+    <ClInclude Include="..\PDSim\GrasperObject.h" />
+    <ClInclude Include="..\PDSim\GripperCollider.h" />
+    <ClInclude Include="..\PDSim\HapticDevice.h" />
+    <ClInclude Include="..\PDSim\SimManager.h" />
+    <ClInclude Include="..\PDSim\SoftObject.h" />
+    <ClInclude Include="..\PDSim\Solver.h" />
+    <ClInclude Include="..\PDSim\SphereCollider.h" />
+    <ClInclude Include="..\PDSim\ToolObject.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\3rd\glad\src\glad.c" />
+    <ClCompile Include="..\3rd\imgui\imgui.cpp" />
+    <ClCompile Include="..\3rd\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\3rd\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\3rd\imgui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="..\3rd\imgui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="..\3rd\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\3rd\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\3rd\stb\src\libstb.c" />
+    <ClCompile Include="..\GLRender\application.cpp" />
+    <ClCompile Include="..\GLRender\FileHelper.cpp" />
+    <ClCompile Include="..\GLRender\image.cpp" />
+    <ClCompile Include="..\GLRender\ImguiHelper.cpp" />
+    <ClCompile Include="..\GLRender\opengl.cpp" />
+    <ClCompile Include="..\GLRender\openglMaterial.cpp" />
+    <ClCompile Include="..\GLRender\openglRender.cpp" />
+    <ClCompile Include="..\GLRender\openglScene.cpp" />
+    <ClCompile Include="..\GLRender\optimus.cpp" />
+    <ClCompile Include="..\GLRender\pystring.cpp" />
+    <ClCompile Include="..\GLRender\StringHelper.cpp" />
+    <ClCompile Include="..\GLRender\glutils.cpp" />
+    <ClCompile Include="..\PDSim\calculate.cpp" />
+    <ClCompile Include="..\PDSim\CylinderCollider.cpp" />
+    <ClCompile Include="..\PDSim\EHookObject.cpp" />
+    <ClCompile Include="..\PDSim\EmptyObjec.cpp" />
+    <ClCompile Include="..\PDSim\GrasperObject.cpp" />
+    <ClCompile Include="..\PDSim\GripperCollider.cpp" />
+    <ClCompile Include="..\PDSim\HapticDevice.cpp" />
+    <ClCompile Include="..\PDSim\SimManager.cpp" />
+    <ClCompile Include="..\PDSim\SoftObject.cpp" />
+    <ClCompile Include="..\PDSim\Solver.cpp" />
+    <ClCompile Include="..\PDSim\SolverHaptic.cpp" />
+    <ClCompile Include="..\PDSim\SolverInit.cpp" />
+    <ClCompile Include="..\PDSim\SolverStep.cpp" />
+    <ClCompile Include="..\PDSim\SphereCollider.cpp" />
+    <ClCompile Include="..\PDSim\ToolObject.cpp" />
+    <ClCompile Include="SimApp.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\PDSim\gpu\grab.cu" />
+    <CudaCompile Include="..\PDSim\gpu\collision.cu" />
+    <CudaCompile Include="..\PDSim\gpu\spring.cu" />
+    <CudaCompile Include="..\PDSim\gpu\tet.cu" />
+    <CudaCompile Include="..\PDSim\gpu\var.cu" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.1.targets" />
+  </ImportGroup>
+</Project>
